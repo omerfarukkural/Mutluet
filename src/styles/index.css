@@ -1,0 +1,10 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+/* Mobile wireframe container */
+body {
+  max-width: 375px;
+  margin: 0 auto;
+  background: #f9fafb;
+}
