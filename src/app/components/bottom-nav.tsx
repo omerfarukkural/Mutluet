@@ -1,14 +1,15 @@
-import { Home, Calendar, Heart, User } from "lucide-react";
+import { Home, Calendar, Heart, User, Grid3x3 } from "lucide-react";
 import { Link, useLocation } from "react-router";
 
 export function BottomNav() {
   const location = useLocation();
   
   const navItems = [
-    { path: "/home", icon: Home, label: "Home" },
-    { path: "/events", icon: Calendar, label: "Events" },
-    { path: "/donate", icon: Heart, label: "Donate" },
-    { path: "/profile", icon: User, label: "Profile" },
+    { path: "/home", icon: Home, label: "Ana Sayfa" },
+    { path: "/categories", icon: Grid3x3, label: "Kategoriler" },
+    { path: "/map", icon: Calendar, label: "Harita" },
+    { path: "/matching", icon: Heart, label: "Eşleşme" },
+    { path: "/profile", icon: User, label: "Profil" },
   ];
 
   return (
