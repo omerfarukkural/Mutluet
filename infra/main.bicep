@@ -1,5 +1,8 @@
-@description('Location for all resources')
+@description('Location for compute resources (App Service, PostgreSQL, Storage)')
 param location string = resourceGroup().location
+
+@description('Location for Static Web App (must be: westeurope, eastus2, westus2, centralus, eastasia)')
+param swaLocation string = 'westeurope'
 
 @description('Environment name (dev, staging, prod)')
 @allowed(['dev', 'staging', 'prod'])
@@ -117,9 +120,10 @@ resource backendApp 'Microsoft.Web/sites@2023-01-01' = {
 }
 
 // ── Azure Static Web App (Frontend) ──────────────────────────
+// Static Web Apps are only available in specific regions — swaLocation is used here
 resource staticWebApp 'Microsoft.Web/staticSites@2023-01-01' = {
   name: '${prefix}-frontend'
-  location: location
+  location: swaLocation
   sku: {
     name: 'Free'
     tier: 'Free'
