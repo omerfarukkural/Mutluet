@@ -15,6 +15,7 @@ import { Games } from "./components/games";
 import { BalloonGame } from "./components/balloon-game";
 import { VideoCall } from "./components/video-call";
 import { OkeyGame } from "./components/okey-game";
+import { AdminDashboard } from "./components/admin-dashboard";
 
 export const router = createBrowserRouter([
   {
@@ -80,5 +81,9 @@ export const router = createBrowserRouter([
   {
     path: "/profile",
     Component: Profile,
+  },
+  {
+    path: "/admin",
+    Component: AdminDashboard,
   },
 ]);

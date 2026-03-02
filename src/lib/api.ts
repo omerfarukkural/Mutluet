@@ -169,6 +169,19 @@ class ApiClient {
   async getNearbyOrganizations(lat: number, lng: number, radius: number = 10): Promise<Organization[]> {
     return this.request(`/organizations/nearby?lat=${lat}&lng=${lng}&radius=${radius}`);
   }
+
+  // Admin APIs
+  async getAllUsers(): Promise<User[]> {
+    return this.request('/users/all');
+  }
+
+  async getAllEvents(): Promise<Event[]> {
+    return this.request('/events');
+  }
+
+  async getAllDonations(): Promise<Donation[]> {
+    return this.request('/donations/all');
+  }
 }
 
 export const api = new ApiClient();

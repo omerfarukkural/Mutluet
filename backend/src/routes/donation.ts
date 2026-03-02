@@ -49,4 +49,37 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
+// Admin: Get all donations
+router.get('/all', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    // Check if user is admin
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { role: true }
+    });
+
+    if (currentUser?.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Yetkisiz erişim' });
+    }
+
+    const donations = await prisma.donation.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+
+    res.json(donations);
+  } catch (error) {
+    console.error('Get all donations error:', error);
+    res.status(500).json({ error: 'Bağışlar alınamadı' });
+  }
+});
+
 export default router;

@@ -8,7 +8,10 @@ import {
   Shield,
   HelpCircle,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
+import { useNavigate } from "react-router";
+import { useAuth } from "../../contexts/AuthContext";
 import { BottomNav } from "./bottom-nav";
 import { Card } from "./ui/card";
 
@@ -26,6 +29,9 @@ const settingsItems = [
 ];
 
 export function Profile() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20 max-w-[375px] mx-auto">
       {/* Header */}
@@ -86,6 +92,27 @@ export function Profile() {
             ))}
           </Card>
         </div>
+
+        {/* Admin Access */}
+        {user?.role === "ADMIN" && (
+          <Card className="bg-gradient-to-r from-indigo-500 to-purple-600 border-0 p-4">
+            <button
+              onClick={() => navigate("/admin")}
+              className="w-full flex items-center gap-3 text-white"
+            >
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div className="flex-1 text-left">
+                <div className="font-semibold">Admin Paneli</div>
+                <div className="text-sm text-white/80">
+                  Platform yönetimi ve istatistikler
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </Card>
+        )}
 
         {/* Settings List */}
         <Card className="bg-white border-gray-200 divide-y divide-gray-200">
