@@ -60,7 +60,7 @@ router.get('/potential', authMiddleware, async (req: AuthRequest, res) => {
 // Create match
 router.post('/:userId/match', authMiddleware, async (req: AuthRequest, res) => {
   try {
-    const { userId: matchedUserId } = req.params;
+    const matchedUserId = req.params.userId as string;
     const { compatibilityScore } = req.body;
 
     const match = await prisma.match.create({

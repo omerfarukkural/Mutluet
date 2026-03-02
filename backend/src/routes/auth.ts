@@ -27,7 +27,7 @@ router.post('/register', async (req, res) => {
     });
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+      expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any
     });
 
     res.json({
@@ -62,7 +62,7 @@ router.post('/login', async (req, res) => {
     }
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+      expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any
     });
 
     res.json({
@@ -110,7 +110,7 @@ router.post('/social/:provider', async (req, res) => {
     }
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+      expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any
     });
 
     res.json({
@@ -147,7 +147,7 @@ router.post('/magic-link', async (req, res) => {
     }
 
     const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-      expiresIn: '15m'
+      expiresIn: '15m' as any
     });
 
     // TODO: Send email with magic link

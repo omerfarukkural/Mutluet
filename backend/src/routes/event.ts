@@ -47,7 +47,7 @@ router.get('/upcoming', async (req, res) => {
 // Join event
 router.post('/:eventId/join', authMiddleware, async (req: AuthRequest, res) => {
   try {
-    const { eventId } = req.params;
+    const eventId = req.params.eventId as string;
 
     const event = await prisma.event.findUnique({
       where: { id: eventId },

@@ -62,7 +62,7 @@ router.get('/conversations', authMiddleware, async (req: AuthRequest, res) => {
 // Get messages with a user
 router.get('/messages/:userId', authMiddleware, async (req: AuthRequest, res) => {
   try {
-    const { userId: otherUserId } = req.params;
+    const otherUserId = req.params.userId as string;
 
     const messages = await prisma.message.findMany({
       where: {
