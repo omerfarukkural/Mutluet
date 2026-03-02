@@ -1,0 +1,232 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  VOLUNTEER
+  ADMIN
+  ORGANIZATION
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  FACEBOOK
+  TIKTOK
+}
+
+enum DonationType {
+  EGITIM
+  GIDA
+  BARINMA
+  HUKUKI
+  SAGLIK
+  DIGER
+}
+
+enum EventCategory {
+  EGITIM
+  SOSYAL
+  BARINMA
+  GIDA
+  HUKUKI
+  SAGLIK
+}
+
+model User {
+  id                String          @id @default(uuid())
+  email             String          @unique
+  name              String
+  password          String?
+  avatar            String?
+  role              UserRole        @default(USER)
+  authProvider      AuthProvider    @default(EMAIL)
+  providerId        String?
+  emailVerified     Boolean         @default(false)
+
+  // Profile
+  bio               String?
+  location          String?
+  phone             String?
+  interests         String[]
+
+  // Stats
+  totalDonations    Float           @default(0)
+  volunteerHours    Int             @default(0)
+  eventsAttended    Int             @default(0)
+  engagementScore   Int             @default(0)
+
+  // Matching
+  matchingEnabled   Boolean         @default(true)
+  compatibilityPreferences Json?
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  donations         Donation[]
+  events            EventParticipant[]
+  sentMessages      Message[]       @relation("SentMessages")
+  receivedMessages  Message[]       @relation("ReceivedMessages")
+  achievements      UserAchievement[]
+  matches           Match[]         @relation("UserMatches")
+  matchedWith       Match[]         @relation("MatchedUsers")
+  challenges        UserChallenge[]
+}
+
+model Donation {
+  id                String          @id @default(uuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id])
+
+  amount            Float
+  type              DonationType
+  description       String?
+  stripePaymentId   String?
+
+  createdAt         DateTime        @default(now())
+
+  @@index([userId])
+}
+
+model Event {
+  id                String          @id @default(uuid())
+  title             String
+  description       String
+  category          EventCategory
+
+  date              DateTime
+  time              String
+  location          String
+  latitude          Float?
+  longitude         Float?
+
+  maxParticipants   Int?
+  currentParticipants Int           @default(0)
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  participants      EventParticipant[]
+}
+
+model EventParticipant {
+  id                String          @id @default(uuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id])
+  eventId           String
+  event             Event           @relation(fields: [eventId], references: [id])
+
+  joinedAt          DateTime        @default(now())
+
+  @@unique([userId, eventId])
+  @@index([userId])
+  @@index([eventId])
+}
+
+model Message {
+  id                String          @id @default(uuid())
+  senderId          String
+  sender            User            @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId        String
+  receiver          User            @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  content           String
+  read              Boolean         @default(false)
+
+  createdAt         DateTime        @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Achievement {
+  id                String          @id @default(uuid())
+  name              String
+  description       String
+  icon              String
+  requirement       Json
+
+  users             UserAchievement[]
+}
+
+model UserAchievement {
+  id                String          @id @default(uuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id])
+  achievementId     String
+  achievement       Achievement     @relation(fields: [achievementId], references: [id])
+
+  unlockedAt        DateTime        @default(now())
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+}
+
+model Challenge {
+  id                String          @id @default(uuid())
+  title             String
+  description       String
+  reward            String
+  totalRequired     Int
+
+  startDate         DateTime
+  endDate           DateTime
+
+  users             UserChallenge[]
+}
+
+model UserChallenge {
+  id                String          @id @default(uuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id])
+  challengeId       String
+  challenge         Challenge       @relation(fields: [challengeId], references: [id])
+
+  progress          Int             @default(0)
+  completed         Boolean         @default(false)
+
+  @@unique([userId, challengeId])
+  @@index([userId])
+}
+
+model Match {
+  id                String          @id @default(uuid())
+  userId            String
+  user              User            @relation("UserMatches", fields: [userId], references: [id])
+  matchedUserId     String
+  matchedUser       User            @relation("MatchedUsers", fields: [matchedUserId], references: [id])
+
+  compatibilityScore Float
+  status            String          @default("pending") // pending, accepted, rejected
+
+  createdAt         DateTime        @default(now())
+
+  @@unique([userId, matchedUserId])
+  @@index([userId])
+  @@index([matchedUserId])
+}
+
+model Organization {
+  id                String          @id @default(uuid())
+  name              String
+  description       String
+  category          String
+
+  address           String
+  latitude          Float
+  longitude         Float
+  distance          Float?
+
+  phone             String?
+  website           String?
+  verified          Boolean         @default(false)
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
