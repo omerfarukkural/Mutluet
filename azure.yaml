@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: mutluet
+
+infra:
+  provider: bicep
+  path: infra
+
+services:
+  frontend:
+    project: .
+    language: ts
+    host: staticwebapp
+    dist: dist
+
+  backend:
+    project: ./backend
+    language: ts
+    host: appservice
+    docker:
+      path: ./backend/Dockerfile
