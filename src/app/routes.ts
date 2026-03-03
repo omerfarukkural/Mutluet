@@ -16,6 +16,7 @@ import { BalloonGame } from "./components/balloon-game";
 import { VideoCall } from "./components/video-call";
 import { OkeyGame } from "./components/okey-game";
 import { AdminDashboard } from "./components/admin-dashboard";
+import { HappinessPage } from "./components/happiness";
 
 export const router = createBrowserRouter([
   {
@@ -85,5 +86,9 @@ export const router = createBrowserRouter([
   {
     path: "/admin",
     Component: AdminDashboard,
+  },
+  {
+    path: "/happiness",
+    Component: HappinessPage,
   },
 ]);
