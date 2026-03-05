@@ -17,6 +17,8 @@ import { VideoCall } from "./components/video-call";
 import { OkeyGame } from "./components/okey-game";
 import { AdminDashboard } from "./components/admin-dashboard";
 import { HappinessPage } from "./components/happiness";
+import { NotFound } from "./components/not-found";
+import { ForgotPassword } from "./components/forgot-password";
 
 export const router = createBrowserRouter([
   {
@@ -90,5 +92,13 @@ export const router = createBrowserRouter([
   {
     path: "/happiness",
     Component: HappinessPage,
+  },
+  {
+    path: "/forgot-password",
+    Component: ForgotPassword,
+  },
+  {
+    path: "*",
+    Component: NotFound,
   },
 ]);

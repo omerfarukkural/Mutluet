@@ -10,7 +10,11 @@ import eventRoutes from './routes/event.js';
 import matchingRoutes from './routes/matching.js';
 import chatRoutes from './routes/chat.js';
 import organizationRoutes from './routes/organization.js';
+import wordpressRoutes from './routes/wordpress.js';
+import oauthRoutes from './routes/oauth.js';
 import { setupSocketIO } from './services/socket.js';
+import { loadSecrets } from './config/azure-secrets.js';
+import { setupMonitoring } from './config/monitoring.js';
 
 dotenv.config();
 
@@ -38,6 +42,8 @@ app.use('/api/events', eventRoutes);
 app.use('/api/matching', matchingRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/organizations', organizationRoutes);
+app.use('/api/wordpress', wordpressRoutes);
+app.use('/api/oauth', oauthRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -47,10 +53,29 @@ app.get('/health', (req, res) => {
 // Socket.IO setup
 setupSocketIO(io);
 
-const PORT = process.env.PORT || 3001;
+// Start server with async initialization
+async function startServer() {
+  try {
+    // Setup monitoring (Application Insights)
+    setupMonitoring();
 
-httpServer.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Socket.IO ready`);
-  console.log(`🌍 Frontend URL: ${process.env.FRONTEND_URL}`);
-});
+    // Load secrets from Azure Key Vault (production only)
+    if (process.env.NODE_ENV === 'production') {
+      await loadSecrets();
+    }
+
+    const PORT = process.env.PORT || 3001;
+
+    httpServer.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📡 Socket.IO ready`);
+      console.log(`🌍 Frontend URL: ${process.env.FRONTEND_URL}`);
+      console.log(`🔐 Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  } catch (error) {
+    console.error('❌ Server startup failed:', error);
+    process.exit(1);
+  }
+}
+
+startServer();

@@ -5,10 +5,11 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { useAuth } from "../../contexts/AuthContext";
+import { api } from "../../lib/api";
 
 export function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -28,8 +29,7 @@ export function Login() {
       if (isLogin) {
         await login(formData.email, formData.password);
       } else {
-        const { register } = await import("../../lib/api");
-        await register.register(formData.email, formData.password, formData.name);
+        await register(formData.email, formData.password, formData.name);
       }
       navigate("/home");
     } catch (err: any) {
@@ -49,7 +49,6 @@ export function Login() {
     setLoading(true);
 
     try {
-      const { api } = await import("../../lib/api");
       const result = await api.magicLink(formData.email);
       alert(result.message + (result.magicLink ? `\n\nLink: ${result.magicLink}` : ""));
     } catch (err: any) {
@@ -65,9 +64,10 @@ export function Login() {
         {/* Logo */}
         <div className="text-center mb-12">
           <div className="w-16 h-16 bg-gray-900 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-            <span className="text-white text-2xl font-bold">B</span>
+            <span className="text-white text-2xl">🤝</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Bitebimuv</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Mutluet</h1>
+          <p className="text-sm text-gray-500 mt-1">Sosyal Etki Platformu</p>
         </div>
 
         {/* Social Login Buttons */}
@@ -193,7 +193,7 @@ export function Login() {
             Magic Link ile Giriş
           </Button>
 
-          <div className="text-center">
+          <div className="text-center space-y-2">
             <button
               type="button"
               onClick={() => {
@@ -204,6 +204,13 @@ export function Login() {
             >
               {isLogin ? "Hesabınız yok mu? Kayıt olun" : "Zaten hesabınız var mı? Giriş yapın"}
             </button>
+            {isLogin && (
+              <div>
+                <Link to="/forgot-password" className="text-xs text-gray-400 hover:text-gray-600">
+                  Şifremi Unuttum
+                </Link>
+              </div>
+            )}
           </div>
         </form>
       </div>

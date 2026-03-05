@@ -14,6 +14,7 @@ import { useNavigate } from "react-router";
 import { useAuth } from "../../contexts/AuthContext";
 import { BottomNav } from "./bottom-nav";
 import { Card } from "./ui/card";
+import { WordPressButton } from "./wordpress-button";
 
 const donationHistory = [
   { id: 1, date: "28 Şubat 2026", amount: 100, cause: "Eğitim Fonu" },
@@ -113,6 +114,12 @@ export function Profile() {
             </button>
           </Card>
         )}
+
+        {/* WordPress SSO */}
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium text-gray-700 px-2">Hızlı Erişim</h3>
+          <WordPressButton />
+        </div>
 
         {/* Settings List */}
         <Card className="bg-white border-gray-200 divide-y divide-gray-200">
