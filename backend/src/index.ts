@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
@@ -27,12 +28,36 @@ const io = new Server(httpServer, {
   }
 });
 
+// Rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Çok fazla istek. Lütfen 15 dakika sonra tekrar deneyin.' }
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Çok fazla giriş denemesi. Lütfen 15 dakika sonra tekrar deneyin.' }
+});
+
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true
 }));
 app.use(express.json());
+
+// Apply rate limiting to all API routes
+app.use('/api/', apiLimiter);
+
+// Apply stricter rate limiting to auth routes
+app.use('/api/auth', authLimiter);
+app.use('/api/oauth', authLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);

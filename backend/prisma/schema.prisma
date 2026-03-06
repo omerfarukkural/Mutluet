@@ -19,6 +19,7 @@ enum AuthProvider {
   GOOGLE
   FACEBOOK
   TIKTOK
+  AZURE
 }
 
 enum DonationType {

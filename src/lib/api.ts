@@ -4,6 +4,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
 
 class ApiClient {
   private token: string | null = null;
+  public readonly baseURL: string = API_BASE_URL;
 
   constructor() {
     this.token = localStorage.getItem('token');
