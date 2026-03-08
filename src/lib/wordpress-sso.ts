@@ -4,7 +4,7 @@
  * This module handles the Single Sign-On flow with WordPress
  */
 
-import { api } from './api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export interface WordPressSSOResponse {
   success: boolean;
@@ -20,7 +20,7 @@ export interface WordPressSSOResponse {
  */
 export async function initiateWordPressSSO(): Promise<WordPressSSOResponse> {
   try {
-    const response = await fetch(`${api.baseURL}/wordpress/sso-token`, {
+    const response = await fetch(`${API_BASE_URL}/wordpress/sso-token`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`,

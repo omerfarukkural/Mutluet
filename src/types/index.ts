@@ -22,8 +22,9 @@ export interface AuthResponse {
 export interface Donation {
   id: string;
   amount: number;
-  type: 'EGITIM' | 'GIDA' | 'BARINMA' | 'HUKUKI' | 'SAGLIK' | 'DIGER';
+  type: 'EGITIM' | 'GIDA' | 'BARINMA' | 'HUKUKI' | 'SAGLIK' | 'DIGER' | 'MONETARY';
   description?: string;
+  isAnonymous?: boolean;
   createdAt: string;
 }
 
