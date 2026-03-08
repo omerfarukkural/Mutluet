@@ -1,0 +1,94 @@
+name: Deploy Bildirimleri
+
+on:
+  workflow_run:
+    workflows: ["Deploy Frontend", "Deploy Backend", "CI — Build & Type Check"]
+    types: [completed]
+
+jobs:
+  bildirim-gonder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Sonucu Hazırla
+        id: durum
+        run: |
+          if [ "${{ github.event.workflow_run.conclusion }}" = "success" ]; then
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+            echo "durum=BAŞARILI" >> $GITHUB_OUTPUT
+          else
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "durum=BAŞARISIZ" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Slack Bildirimi
+        if: ${{ vars.SLACK_NOTIFICATIONS_ENABLED != 'false' }}
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": "${{ steps.durum.outputs.emoji }} *${{ github.event.workflow_run.name }}* ${{ steps.durum.outputs.durum }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ steps.durum.outputs.emoji }} *${{ github.event.workflow_run.name }}* ${{ steps.durum.outputs.durum }}\n\n🌿 *Branch:* `${{ github.event.workflow_run.head_branch }}`\n📦 *Commit:* ${{ github.event.workflow_run.head_commit.message }}\n👤 *Tetikleyen:* ${{ github.event.workflow_run.actor.login }}"
+                  }
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "🕐 ${{ github.event.workflow_run.updated_at }} | <${{ github.event.workflow_run.html_url }}|Workflow Detayı>"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        continue-on-error: true
+
+      - name: Telegram Bildirimi
+        if: ${{ secrets.TELEGRAM_BOT_TOKEN != '' }}
+        run: |
+          WORKFLOW="${{ github.event.workflow_run.name }}"
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
+          COMMIT="${{ github.event.workflow_run.head_commit.message }}"
+          ACTOR="${{ github.event.workflow_run.actor.login }}"
+          EMOJI="${{ steps.durum.outputs.emoji }}"
+          DURUM="${{ steps.durum.outputs.durum }}"
+          URL="${{ github.event.workflow_run.html_url }}"
+          TARIH=$(TZ='Europe/Istanbul' date '+%d.%m.%Y %H:%M')
+
+          MESSAGE="$EMOJI *Mutluet CI/CD — $DURUM*
+
+🔧 Workflow: \`$WORKFLOW\`
+🌿 Branch: \`$BRANCH\`
+📦 Commit: $COMMIT
+👤 Tetikleyen: $ACTOR
+🕐 Zaman: $TARIH
+
+🔗 [Detaylar]($URL)"
+
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "{\"chat_id\": \"${{ secrets.TELEGRAM_CHAT_ID }}\", \"text\": \"$(echo "$MESSAGE" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read())[1:-1])")\", \"parse_mode\": \"Markdown\", \"disable_web_page_preview\": true}" \
+            > /dev/null
+        continue-on-error: true
+
+      - name: Pushbullet Bildirimi (Kritik Hatalar İçin)
+        if: ${{ github.event.workflow_run.conclusion == 'failure' && secrets.PUSHBULLET_API_KEY != '' }}
+        run: |
+          curl -s -X POST https://api.pushbullet.com/v2/pushes \
+            -H "Access-Token: ${{ secrets.PUSHBULLET_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"type\": \"link\",
+              \"title\": \"❌ Mutluet Deploy Başarısız!\",
+              \"body\": \"${{ github.event.workflow_run.name }} — ${{ github.event.workflow_run.head_branch }}\",
+              \"url\": \"${{ github.event.workflow_run.html_url }}\"
+            }" > /dev/null
+        continue-on-error: true
