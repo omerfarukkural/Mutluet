@@ -9,6 +9,8 @@ A comprehensive social impact platform connecting volunteers, donors, and organi
 ![React](https://img.shields.io/badge/React-18.3-61dafb)
 ![Node](https://img.shields.io/badge/Node-22+-green)
 
+> 📘 **Türkçe kapsamlı rehber:** [PROJE_REHBERI.md](./PROJE_REHBERI.md) — Projenin amacı, yapım aşamaları, kullanılan teknolojiler, API key'ler ve geliştirme yol haritası
+
 ## 🌟 Features
 
 ### 🎯 Core Features

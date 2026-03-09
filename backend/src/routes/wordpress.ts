@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, AuthRequest } from '../middleware/auth.js';
 import { getSecretSync } from '../config/azure-secrets.js';
 
 const router = Router();
@@ -13,7 +13,7 @@ const router = Router();
  * Requires authentication
  * Returns a JWT token that WordPress can verify
  */
-router.post('/sso-token', authenticateToken, async (req, res) => {
+router.post('/sso-token', authenticateToken, async (req: AuthRequest, res) => {
   try {
     const user = req.user;
 
