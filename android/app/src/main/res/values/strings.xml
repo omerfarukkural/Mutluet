@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mutluet Optimizer</string>
+    <string name="app_description">AI destekli telefon optimizasyon asistanı</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Ayarlar</string>
+    <string name="api_key_label">Claude API Anahtarı</string>
+    <string name="api_key_hint">sk-ant-api03-…</string>
+    <string name="api_key_saved">API anahtarı kaydedildi</string>
+    <string name="api_key_test">Anahtarı Test Et</string>
+    <string name="api_key_valid">Geçerli anahtar</string>
+    <string name="api_key_invalid">Geçersiz anahtar</string>
+    <string name="model_label">AI Modeli</string>
+
+    <!-- Chat -->
+    <string name="chat_hint">Ne yapmamı istersiniz?</string>
+    <string name="chat_thinking">Düşünüyor…</string>
+    <string name="chat_using_tool">Araç kullanıyor: %1$s</string>
+
+    <!-- Approval Dialog -->
+    <string name="approval_title">Onay Gerekiyor</string>
+    <string name="approval_confirm">Onayla</string>
+    <string name="approval_cancel">İptal</string>
+
+    <!-- Permissions -->
+    <string name="perm_usage_stats_title">Kullanım İstatistikleri İzni</string>
+    <string name="perm_usage_stats_msg">Batarya ve CPU tüketimi analizi için bu izni verin. Ayarlar > Uygulamalar > Özel Uygulama Erişimi</string>
+    <string name="perm_storage_title">Depolama İzni</string>
+    <string name="perm_storage_msg">Dosya ve fotoğraf yönetimi için depolama erişimi gereklidir.</string>
+
+    <!-- Quick Actions -->
+    <string name="quick_optimize">Telefonu Optimize Et</string>
+    <string name="quick_photos">Fotoğrafları Düzenle</string>
+    <string name="quick_storage">Depolama Temizle</string>
+    <string name="quick_processes">Süreçleri Yönet</string>
+    <string name="quick_devenv">Geliştirme Ortamı</string>
+</resources>
