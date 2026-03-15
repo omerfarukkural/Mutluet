@@ -9,8 +9,6 @@ const prisma = new PrismaClient();
 /**
  * Google OAuth Callback
  * POST /api/oauth/google
- *
- * Body: { googleToken: string, name: string, email: string, picture: string }
  */
 router.post('/google', async (req, res) => {
   try {
@@ -20,40 +18,30 @@ router.post('/google', async (req, res) => {
       return res.status(400).json({ error: 'Email ve name gerekli' });
     }
 
-    // Find or create user
-    let user = await prisma.user.findUnique({
-      where: { email }
-    });
+    let user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
-      // Create new user
       user = await prisma.user.create({
         data: {
           email,
           name,
           authProvider: 'GOOGLE',
-          profileImage: picture || undefined
+          avatar: picture || undefined
         }
       });
     } else {
-      // Update existing user
       user = await prisma.user.update({
         where: { email },
         data: {
           authProvider: 'GOOGLE',
-          profileImage: picture || user.profileImage
+          avatar: picture || user.avatar
         }
       });
     }
 
-    // Generate JWT token
     const jwtSecret = getSecretSync('JWT-SECRET') || process.env.JWT_SECRET || 'default-secret';
     const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-        role: user.role
-      },
+      { userId: user.id, email: user.email, role: user.role },
       jwtSecret,
       { expiresIn: '7d' }
     );
@@ -66,7 +54,7 @@ router.post('/google', async (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role,
-        profileImage: user.profileImage
+        avatar: user.avatar
       }
     });
   } catch (error: any) {
@@ -78,8 +66,6 @@ router.post('/google', async (req, res) => {
 /**
  * Facebook OAuth Callback
  * POST /api/oauth/facebook
- *
- * Body: { facebookToken: string, name: string, email: string, picture: string }
  */
 router.post('/facebook', async (req, res) => {
   try {
@@ -89,10 +75,7 @@ router.post('/facebook', async (req, res) => {
       return res.status(400).json({ error: 'Email ve name gerekli' });
     }
 
-    // Find or create user
-    let user = await prisma.user.findUnique({
-      where: { email }
-    });
+    let user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
       user = await prisma.user.create({
@@ -100,7 +83,7 @@ router.post('/facebook', async (req, res) => {
           email,
           name,
           authProvider: 'FACEBOOK',
-          profileImage: picture || undefined
+          avatar: picture || undefined
         }
       });
     } else {
@@ -108,19 +91,14 @@ router.post('/facebook', async (req, res) => {
         where: { email },
         data: {
           authProvider: 'FACEBOOK',
-          profileImage: picture || user.profileImage
+          avatar: picture || user.avatar
         }
       });
     }
 
-    // Generate JWT token
     const jwtSecret = getSecretSync('JWT-SECRET') || process.env.JWT_SECRET || 'default-secret';
     const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-        role: user.role
-      },
+      { userId: user.id, email: user.email, role: user.role },
       jwtSecret,
       { expiresIn: '7d' }
     );
@@ -133,7 +111,7 @@ router.post('/facebook', async (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role,
-        profileImage: user.profileImage
+        avatar: user.avatar
       }
     });
   } catch (error: any) {
@@ -145,8 +123,6 @@ router.post('/facebook', async (req, res) => {
 /**
  * TikTok OAuth Callback
  * POST /api/oauth/tiktok
- *
- * Body: { tiktokToken: string, name: string, email: string, picture: string }
  */
 router.post('/tiktok', async (req, res) => {
   try {
@@ -156,10 +132,7 @@ router.post('/tiktok', async (req, res) => {
       return res.status(400).json({ error: 'Email ve name gerekli' });
     }
 
-    // Find or create user
-    let user = await prisma.user.findUnique({
-      where: { email }
-    });
+    let user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
       user = await prisma.user.create({
@@ -167,7 +140,7 @@ router.post('/tiktok', async (req, res) => {
           email,
           name,
           authProvider: 'TIKTOK',
-          profileImage: picture || undefined
+          avatar: picture || undefined
         }
       });
     } else {
@@ -175,19 +148,14 @@ router.post('/tiktok', async (req, res) => {
         where: { email },
         data: {
           authProvider: 'TIKTOK',
-          profileImage: picture || user.profileImage
+          avatar: picture || user.avatar
         }
       });
     }
 
-    // Generate JWT token
     const jwtSecret = getSecretSync('JWT-SECRET') || process.env.JWT_SECRET || 'default-secret';
     const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-        role: user.role
-      },
+      { userId: user.id, email: user.email, role: user.role },
       jwtSecret,
       { expiresIn: '7d' }
     );
@@ -200,7 +168,7 @@ router.post('/tiktok', async (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role,
-        profileImage: user.profileImage
+        avatar: user.avatar
       }
     });
   } catch (error: any) {
@@ -212,8 +180,8 @@ router.post('/tiktok', async (req, res) => {
 /**
  * Azure AD OAuth Callback
  * POST /api/oauth/azure
- *
- * Body: { azureToken: string, name: string, email: string }
+ * Not: AuthProvider enum'da AZURE yok, EMAIL olarak kaydediyoruz
+ * ve providerId ile Azure olduğunu belirtiyoruz.
  */
 router.post('/azure', async (req, res) => {
   try {
@@ -223,36 +191,30 @@ router.post('/azure', async (req, res) => {
       return res.status(400).json({ error: 'Email ve name gerekli' });
     }
 
-    // Find or create user
-    let user = await prisma.user.findUnique({
-      where: { email }
-    });
+    let user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
       user = await prisma.user.create({
         data: {
           email,
           name,
-          authProvider: 'AZURE'
+          authProvider: 'EMAIL',
+          providerId: 'azure'
         }
       });
     } else {
       user = await prisma.user.update({
         where: { email },
         data: {
-          authProvider: 'AZURE'
+          authProvider: 'EMAIL',
+          providerId: 'azure'
         }
       });
     }
 
-    // Generate JWT token
     const jwtSecret = getSecretSync('JWT-SECRET') || process.env.JWT_SECRET || 'default-secret';
     const token = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-        role: user.role
-      },
+      { userId: user.id, email: user.email, role: user.role },
       jwtSecret,
       { expiresIn: '7d' }
     );
@@ -265,7 +227,7 @@ router.post('/azure', async (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role,
-        profileImage: user.profileImage
+        avatar: user.avatar
       }
     });
   } catch (error: any) {

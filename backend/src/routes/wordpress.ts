@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
-import { authenticateToken } from '../middleware/auth.js';
+import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { getSecretSync } from '../config/azure-secrets.js';
 
 const router = Router();
@@ -13,11 +13,11 @@ const router = Router();
  * Requires authentication
  * Returns a JWT token that WordPress can verify
  */
-router.post('/sso-token', authenticateToken, async (req, res) => {
+router.post('/sso-token', authMiddleware, async (req: AuthRequest, res) => {
   try {
-    const user = req.user;
+    const userId = req.userId;
 
-    if (!user) {
+    if (!userId) {
       return res.status(401).json({ error: 'Kullanıcı bulunamadı' });
     }
 
@@ -27,10 +27,7 @@ router.post('/sso-token', authenticateToken, async (req, res) => {
     // Create WordPress-specific JWT
     const wpToken = jwt.sign(
       {
-        user_id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
+        user_id: userId,
         exp: Math.floor(Date.now() / 1000) + (60 * 5) // 5 minutes
       },
       wpSecret
