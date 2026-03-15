@@ -1,36 +1,48 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Önce varsa sil
-  await prisma.user.deleteMany({
-    where: { email: 'admin@mutluet.org' }
-  });
+  const email = 'admin@mutluet.org';
+  const password = 'MutluEt2026!';
+  const name = 'Ömer Faruk Kural';
 
-  // Admin oluştur
-  const admin = await prisma.user.create({
-    data: {
-      email: 'admin@mutluet.org',
-      name: 'Admin Kullanıcısı',
-      password: '$2a$10$kFUKauCV/r2mEIfkSR5V4uScjvrGKFJ225LXA5outQwbbweY7GF3.',
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  // Upsert: varsa güncelle, yoksa oluştur
+  const admin = await prisma.user.upsert({
+    where: { email },
+    update: {
+      role: 'ADMIN',
+      name,
+      password: hashedPassword,
+    },
+    create: {
+      email,
+      password: hashedPassword,
+      name,
       role: 'ADMIN',
       authProvider: 'EMAIL',
       emailVerified: true,
-      bio: 'Mutluet Platformu Yöneticisi',
-      location: 'Türkiye',
-      totalDonations: 0,
-      volunteerHours: 0,
-      eventsAttended: 0,
+      bio: 'Mutluet Platform Yöneticisi - Bir Tebessüm Bin Mutluluk Derneği',
+      location: 'Hatay, Türkiye',
+      interests: ['yönetim', 'sosyal sorumluluk', 'eğitim', 'teknoloji'],
       engagementScore: 100,
       matchingEnabled: false,
     }
   });
 
-  console.log('✅ Admin kullanıcısı oluşturuldu!');
-  console.log('Email: admin@mutluet.org');
-  console.log('Şifre: Antakya_123');
-  console.log('ID:', admin.id);
+  console.log('✅ Admin kullanıcısı oluşturuldu/güncellendi!');
+  console.log(`📧 Email: ${email}`);
+  console.log(`🔑 Şifre: ${password}`);
+  console.log(`👤 İsim: ${admin.name}`);
+  console.log(`🛡️  Rol: ${admin.role}`);
+  console.log(`🆔 ID: ${admin.id}`);
+  console.log('\n⚠️  ÖNEMLİ: Production\'da şifrenizi hemen değiştirin!');
 }
 
 main()

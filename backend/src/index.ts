@@ -12,6 +12,7 @@ import chatRoutes from './routes/chat.js';
 import organizationRoutes from './routes/organization.js';
 import wordpressRoutes from './routes/wordpress.js';
 import oauthRoutes from './routes/oauth.js';
+import adminRoutes from './routes/admin.js';
 import { setupSocketIO } from './services/socket.js';
 import { loadSecrets } from './config/azure-secrets.js';
 import { setupMonitoring } from './config/monitoring.js';
@@ -44,6 +45,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/wordpress', wordpressRoutes);
 app.use('/api/oauth', oauthRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

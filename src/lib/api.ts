@@ -182,6 +182,118 @@ class ApiClient {
   async getAllDonations(): Promise<Donation[]> {
     return this.request('/donations/all');
   }
+
+  // Admin Panel APIs
+  async getAdminStats(): Promise<any> {
+    return this.request('/admin/stats');
+  }
+
+  async getAdminUsers(params?: { page?: number; limit?: number; search?: string; role?: string }): Promise<{ users: User[]; total: number; page: number; totalPages: number }> {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', params.page.toString());
+    if (params?.limit) query.set('limit', params.limit.toString());
+    if (params?.search) query.set('search', params.search);
+    if (params?.role) query.set('role', params.role);
+    return this.request(`/admin/users?${query.toString()}`);
+  }
+
+  async getAdminUserDetail(userId: string): Promise<any> {
+    return this.request(`/admin/users/${userId}`);
+  }
+
+  async updateUserRole(userId: string, role: string): Promise<any> {
+    return this.request(`/admin/users/${userId}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    });
+  }
+
+  async updateUser(userId: string, data: Partial<User>): Promise<User> {
+    return this.request(`/admin/users/${userId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteUser(userId: string): Promise<{ message: string }> {
+    return this.request(`/admin/users/${userId}`, { method: 'DELETE' });
+  }
+
+  // Admin: Etkinlik CRUD
+  async createEvent(data: {
+    title: string;
+    description: string;
+    category: string;
+    date: string;
+    time: string;
+    location: string;
+    maxParticipants?: number;
+  }): Promise<Event> {
+    return this.request('/admin/events', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateEvent(eventId: string, data: Partial<Event>): Promise<Event> {
+    return this.request(`/admin/events/${eventId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteEvent(eventId: string): Promise<{ message: string }> {
+    return this.request(`/admin/events/${eventId}`, { method: 'DELETE' });
+  }
+
+  // Admin: Kuruluş CRUD
+  async createOrganization(data: Partial<Organization>): Promise<Organization> {
+    return this.request('/admin/organizations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteOrganization(orgId: string): Promise<{ message: string }> {
+    return this.request(`/admin/organizations/${orgId}`, { method: 'DELETE' });
+  }
+
+  // Admin: Sistem
+  async getSystemInfo(): Promise<any> {
+    return this.request('/admin/system');
+  }
+
+  // Admin: AI Asistan
+  async sendAiMessage(message: string, context?: any): Promise<{ response: string; source: string }> {
+    return this.request('/admin/ai/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message, context }),
+    });
+  }
+
+  async runDbQuery(query: string): Promise<{ result: any[]; rowCount: number }> {
+    return this.request('/admin/ai/query', {
+      method: 'POST',
+      body: JSON.stringify({ query }),
+    });
+  }
+
+  // Admin: GitHub
+  async getGithubStatus(): Promise<any> {
+    return this.request('/admin/github/status');
+  }
+
+  async triggerDeploy(): Promise<{ message: string }> {
+    return this.request('/admin/github/deploy', { method: 'POST' });
+  }
+
+  // Admin: Bağışlar (sayfalı)
+  async getAdminDonations(params?: { page?: number; limit?: number }): Promise<{ donations: Donation[]; total: number }> {
+    const query = new URLSearchParams();
+    if (params?.page) query.set('page', params.page.toString());
+    if (params?.limit) query.set('limit', params.limit.toString());
+    return this.request(`/admin/donations?${query.toString()}`);
+  }
 }
 
 export const api = new ApiClient();
