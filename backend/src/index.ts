@@ -56,13 +56,11 @@ setupSocketIO(io);
 // Start server with async initialization
 async function startServer() {
   try {
-    // Setup monitoring (Application Insights)
+    // Setup monitoring (Application Insights - opsiyonel)
     setupMonitoring();
 
-    // Load secrets from Azure Key Vault (production only)
-    if (process.env.NODE_ENV === 'production') {
-      await loadSecrets();
-    }
+    // Secret kontrolü (environment variables)
+    await loadSecrets();
 
     const PORT = process.env.PORT || 3001;
 

@@ -37,6 +37,12 @@ pnpm-debug.log*
 # Prisma
 backend/prisma/migrations/**/migration.sql
 
+# Flutter (mutluet_app)
+mutluet_app/.dart_tool/
+mutluet_app/.flutter-plugins*
+mutluet_app/build/
+mutluet_app/.packages
+
 # OS
 .DS_Store
 Thumbs.db

@@ -1,84 +1,88 @@
-import { SecretClient } from '@azure/keyvault-secrets';
-import { DefaultAzureCredential } from '@azure/identity';
+/**
+ * Secret Management - Environment Variables Based
+ * 
+ * Azure Key Vault kaldırıldı (maliyet optimizasyonu).
+ * Tüm secretlar .env dosyasından veya platform environment variables'dan okunur.
+ */
 
-const vaultUrl = process.env.AZURE_KEY_VAULT_URL || 'https://mutluet-vault.vault.azure.net/';
-
-let client: SecretClient | null = null;
 const secretCache: Record<string, string> = {};
 
-function getClient(): SecretClient {
-  if (!client) {
-    const credential = new DefaultAzureCredential();
-    client = new SecretClient(vaultUrl, credential);
-  }
-  return client;
-}
-
+/**
+ * Secret'ı environment variable'dan al
+ * Secret adı formatı: "JWT-SECRET" → "JWT_SECRET" dönüşümü yapılır
+ */
 export async function getSecret(secretName: string): Promise<string> {
   // Cache'den kontrol et
   if (secretCache[secretName]) {
     return secretCache[secretName];
   }
 
-  try {
-    const client = getClient();
-    const secret = await client.getSecret(secretName);
+  // Environment variable'dan al (tire → alt çizgi dönüşümü)
+  const envKey = secretName.replace(/-/g, '_');
+  const envValue = process.env[envKey] || process.env[envKey.toUpperCase()];
 
-    if (!secret.value) {
-      throw new Error(`Secret ${secretName} bulunamadı`);
-    }
-
-    // Cache'e kaydet
-    secretCache[secretName] = secret.value;
-    return secret.value;
-  } catch (error) {
-    console.error(`Secret alınamadı (${secretName}):`, error);
-    // Fallback: Environment variable
-    const envValue = process.env[secretName.replace(/-/g, '_')];
-    if (envValue) {
-      console.log(`Using environment variable for ${secretName}`);
-      return envValue;
-    }
-    throw error;
+  if (envValue) {
+    secretCache[secretName] = envValue;
+    return envValue;
   }
+
+  console.warn(`⚠️ Secret bulunamadı: ${secretName} (env: ${envKey})`);
+  throw new Error(`Secret ${secretName} bulunamadı. Lütfen .env dosyasına ${envKey} ekleyin.`);
 }
 
-// Tüm sırları başlangıçta yükle
-export async function loadSecrets() {
-  const isProduction = process.env.NODE_ENV === 'production';
+/**
+ * Tüm secretları başlangıçta yükle ve doğrula
+ */
+export async function loadSecrets(): Promise<void> {
+  const requiredSecrets = [
+    'DATABASE_URL',
+    'JWT_SECRET',
+  ];
 
-  if (!isProduction) {
-    console.log('⚠️  Development mode: Skipping Key Vault, using environment variables');
-    return;
+  const optionalSecrets = [
+    'STRIPE_SECRET_KEY',
+    'GOOGLE_CLIENT_ID',
+    'GOOGLE_CLIENT_SECRET',
+    'WORDPRESS_JWT_SECRET',
+    'SUPABASE_URL',
+    'SUPABASE_SERVICE_ROLE_KEY',
+  ];
+
+  console.log('🔑 Environment secrets kontrol ediliyor...');
+
+  // Zorunlu secretlar
+  for (const name of requiredSecrets) {
+    if (!process.env[name]) {
+      console.error(`❌ Zorunlu secret eksik: ${name}`);
+    } else {
+      secretCache[name] = process.env[name]!;
+      console.log(`  ✅ ${name}`);
+    }
   }
 
-  try {
-    const secrets = [
-      'DATABASE-URL',
-      'JWT-SECRET',
-      'STRIPE-SECRET-KEY',
-      'GOOGLE-CLIENT-ID',
-      'GOOGLE-CLIENT-SECRET',
-      'WORDPRESS-JWT-SECRET'
-    ];
-
-    console.log('🔑 Loading secrets from Azure Key Vault...');
-    await Promise.all(secrets.map(name => getSecret(name).catch(err => {
-      console.warn(`⚠️  Failed to load ${name}:`, err.message);
-    })));
-    console.log('✅ Secrets loaded from Key Vault');
-  } catch (error) {
-    console.warn('⚠️ Some secrets failed to load, using environment variables');
+  // Opsiyonel secretlar
+  for (const name of optionalSecrets) {
+    if (process.env[name]) {
+      secretCache[name] = process.env[name]!;
+      console.log(`  ✅ ${name}`);
+    } else {
+      console.log(`  ⚠️ ${name} (opsiyonel, tanımlı değil)`);
+    }
   }
+
+  console.log('✅ Secret kontrolü tamamlandı');
 }
 
-// Helper function to get secret synchronously from cache or env
+/**
+ * Secret'ı senkron olarak cache veya env'den al
+ */
 export function getSecretSync(secretName: string): string | undefined {
-  // Try cache first
+  // Cache'den kontrol et
   if (secretCache[secretName]) {
     return secretCache[secretName];
   }
 
-  // Fallback to environment variable
-  return process.env[secretName.replace(/-/g, '_')];
+  // Environment variable'dan al
+  const envKey = secretName.replace(/-/g, '_');
+  return process.env[envKey] || process.env[envKey.toUpperCase()];
 }

@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
-import { authenticateToken } from '../middleware/auth.js';
+import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 import { getSecretSync } from '../config/azure-secrets.js';
+import prisma from '../config/database.js';
 
 const router = Router();
 
@@ -13,12 +14,22 @@ const router = Router();
  * Requires authentication
  * Returns a JWT token that WordPress can verify
  */
-router.post('/sso-token', authenticateToken, async (req, res) => {
+router.post('/sso-token', authMiddleware, async (req: AuthRequest, res) => {
   try {
-    const user = req.user;
+    const userId = req.userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Kullanıcı bulunamadı' });
+    }
+
+    // Kullanıcı bilgilerini DB'den al
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, role: true }
+    });
 
     if (!user) {
-      return res.status(401).json({ error: 'Kullanıcı bulunamadı' });
+      return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
     }
 
     // Get WordPress JWT secret
