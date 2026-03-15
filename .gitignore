@@ -16,6 +16,10 @@ dist
 .env.development.local
 .env.test.local
 .env.production.local
+.env.supabase
+backend/.env
+backend/.env.local
+backend/.env.supabase
 
 # Logs
 npm-debug.log*
