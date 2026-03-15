@@ -175,6 +175,13 @@ class ApiClient {
     return this.request('/users/all');
   }
 
+  async updateUserRole(userId: string, role: User['role']): Promise<User> {
+    return this.request(`/users/${userId}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    });
+  }
+
   async getAllEvents(): Promise<Event[]> {
     return this.request('/events');
   }

@@ -111,4 +111,49 @@ router.get('/all', authMiddleware, async (req: AuthRequest, res) => {
   }
 });
 
+// Admin: Update user role
+router.patch('/:id/role', authMiddleware, async (req: AuthRequest, res) => {
+  try {
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { role: true }
+    });
+
+    if (currentUser?.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Yetkisiz erişim' });
+    }
+
+    const id = req.params.id as string;
+    const { role } = req.body;
+
+    const allowedRoles = ['USER', 'VOLUNTEER', 'ADMIN', 'ORGANIZATION'];
+    if (!id || typeof id !== 'string' || !allowedRoles.includes(role)) {
+      return res.status(400).json({ error: 'Geçersiz istek parametreleri' });
+    }
+
+    const targetUser = await prisma.user.findUnique({ where: { id }, select: { id: true } });
+    if (!targetUser) {
+      return res.status(404).json({ error: 'Kullanıcı bulunamadı' });
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: { role },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        engagementScore: true,
+        createdAt: true
+      }
+    });
+
+    res.json(user);
+  } catch (error) {
+    console.error('Update user role error:', error);
+    res.status(500).json({ error: 'Rol güncellenemedi' });
+  }
+});
+
 export default router;
