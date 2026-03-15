@@ -12,6 +12,7 @@ import chatRoutes from './routes/chat.js';
 import organizationRoutes from './routes/organization.js';
 import wordpressRoutes from './routes/wordpress.js';
 import oauthRoutes from './routes/oauth.js';
+import configRoutes from './routes/config.js';
 import { setupSocketIO } from './services/socket.js';
 import { loadSecrets } from './config/azure-secrets.js';
 import { setupMonitoring } from './config/monitoring.js';
@@ -44,6 +45,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/wordpress', wordpressRoutes);
 app.use('/api/oauth', oauthRoutes);
+app.use('/api/config', configRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -59,10 +61,8 @@ async function startServer() {
     // Setup monitoring (Application Insights)
     setupMonitoring();
 
-    // Load secrets from Azure Key Vault (production only)
-    if (process.env.NODE_ENV === 'production') {
-      await loadSecrets();
-    }
+    // Load secrets from Azure Key Vault (production) or env cache (development)
+    await loadSecrets();
 
     const PORT = process.env.PORT || 3001;
 

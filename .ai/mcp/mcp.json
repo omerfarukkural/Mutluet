@@ -1,0 +1,37 @@
+{
+  "mcpServers": {
+    "figma": {
+      "httpUrl": "https://mcp.figma.com/mcp"
+    },
+    "canva": {
+      "httpUrl": "https://mcp.canva.com/mcp"
+    },
+    "notion": {
+      "httpUrl": "https://mcp.notion.com/mcp"
+    },
+    "vercel": {
+      "httpUrl": "https://mcp.vercel.com"
+    },
+    "supabase": {
+      "httpUrl": "https://mcp.supabase.com/mcp?read_only=true"
+    },
+    "workspaceDeveloper": {
+      "httpUrl": "https://workspace-developer.goog/mcp"
+    },
+    "googleDeveloperKnowledge": {
+      "httpUrl": "https://developerknowledge.googleapis.com/mcp",
+      "headers": {
+        "X-Goog-Api-Key": "AIzaSyDE5mGkdiKpHU1eMjKMxv4bpU9wr2KFbzQ"
+      }
+    },
+    "microsoftLearn": {
+      "httpUrl": "https://learn.microsoft.com/api/mcp"
+    },
+    "github": {
+      "httpUrl": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer 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"
+      }
+    }
+  }
+}

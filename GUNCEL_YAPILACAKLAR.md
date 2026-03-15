@@ -35,13 +35,13 @@
 
 ```bash
 # JWT Secret (Production)
-JWT_SECRET=0b19629595089bc1df746adeaed4389e8379d5f1f187883fad88fe6bb3518ed2
+JWT_SECRET=0b19629595089bc1df74XXXX
 
 # WordPress JWT Secret
-WORDPRESS_JWT_SECRET=c7d8eff6cbc913e4e077c154387a46bd830c7595d1c2a99861b1526cdf65e396
+WORDPRESS_JWT_SECRET=c7d8eff6cbc913e4e077c15438XXXX6
 
 # Backup Secret (gerekirse kullan)
-BACKUP_SECRET=48e0a7330546cee9d5958ae03feb754b9d7701b8625fa42d2f815b84d13bda7e
+BACKUP_SECRET=48e0a7330546cee9d5958ae03feb754b9d77XXX
 ```
 
 #### Supabase'den Al:
@@ -51,7 +51,7 @@ BACKUP_SECRET=48e0a7330546cee9d5958ae03feb754b9d7701b8625fa42d2f815b84d13bda7e
 
 ```
 SUPABASE_URL=https://xuqbxbhgkoivqdqblbeq.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1cWJ4Ymhna29pdnFkcWJsYmVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0OTI4NDgsImV4cCI6MjA4ODA2ODg0OH0.stN_6Da5qvm9mcoPEnXjYgLWaRg16rfS-6pyGFRFdc8
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.29pdnFkcWFdc8
 SUPABASE_SERVICE_ROLE_KEY=(Settings → API → service_role key - gizli!)
 ```
 
@@ -83,8 +83,8 @@ GOOGLE_CLIENT_SECRET=GOCSPX-...
 
 | Secret Name | Value | Nereden Alındı |
 |-------------|-------|----------------|
-| `JWT_SECRET` | `0b19629595089bc1df746adeaed4389e8379d5f1f187883fad88fe6bb3518ed2` | ✅ Yukarıda oluşturuldu |
-| `WORDPRESS_JWT_SECRET` | `c7d8eff6cbc913e4e077c154387a46bd830c7595d1c2a99861b1526cdf65e396` | ✅ Yukarıda oluşturuldu |
+| `JWT_SECRET` | `0b19629595089bc1df746adXX87883fad88fe6bb3518ed2` | ✅ Yukarıda oluşturuldu |
+| `WORDPRESS_JWT_SECRET` | `XXXX` | ✅ Yukarıda oluşturuldu |
 | `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGc...` (service_role) | Supabase Dashboard → API |
 | `DATABASE_URL` | `postgresql://postgres:Antakya_123@db.gzeebhkogwmnmefapebo.supabase.co:5432/postgres` | ✅ Backend .env'den |
 | `STRIPE_SECRET_KEY` | `sk_test_...` | Stripe Dashboard (opsiyonel) |
@@ -114,15 +114,15 @@ GOOGLE_CLIENT_SECRET=GOCSPX-...
 | Variable Name | Value | Environment |
 |---------------|-------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://xuqbxbhgkoivqdqblbeq.supabase.co` | Production, Preview, Development |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` | Production, Preview, Development |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `XX...` | Production, Preview, Development |
 
 #### Backend (Private - Server-side)
 
 | Variable Name | Value | Environment |
 |---------------|-------|-------------|
 | `DATABASE_URL` | `postgresql://postgres:Antakya_123@db.gzeebhkogwmnmefapebo.supabase.co:5432/postgres` | Production, Preview, Development |
-| `JWT_SECRET` | `0b19629595089bc1df746adeaed4389e8379d5f1f187883fad88fe6bb3518ed2` | Production, Preview, Development |
-| `WORDPRESS_JWT_SECRET` | `c7d8eff6cbc913e4e077c154387a46bd830c7595d1c2a99861b1526cdf65e396` | Production, Preview, Development |
+| `JWT_SECRET` | `XX` | Production, Preview, Development |
+| `WORDPRESS_JWT_SECRET` | `XXX` | Production, Preview, Development |
 | `SUPABASE_SERVICE_ROLE_KEY` | `(service_role key)` | Production, Preview, Development |
 | `STRIPE_SECRET_KEY` | `sk_test_...` (opsiyonel) | Production, Preview, Development |
 | `GOOGLE_CLIENT_SECRET` | `GOCSPX-...` (opsiyonel) | Production, Preview, Development |

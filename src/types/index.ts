@@ -21,9 +21,17 @@ export interface AuthResponse {
 
 export interface Donation {
   id: string;
+  userId?: string;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+  };
   amount: number;
   type: 'EGITIM' | 'GIDA' | 'BARINMA' | 'HUKUKI' | 'SAGLIK' | 'DIGER';
   description?: string;
+  isAnonymous?: boolean;
+  stripePaymentId?: string;
   createdAt: string;
 }
 
