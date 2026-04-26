@@ -1,0 +1,71 @@
+# Default-deny: mutluet-prod namespace'inde tüm trafiği varsayılan olarak kapat
+# Sonra sadece gerekli bağlantılara izin ver
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: mutluet-prod
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+# Backend → PostgreSQL/Supabase erişimine izin ver
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-db
+  namespace: mutluet-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: mutluet-backend
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - port: 5432      # PostgreSQL
+      protocol: TCP
+    - port: 443       # Supabase HTTPS
+      protocol: TCP
+---
+# Frontend (ingress) → Backend erişimine izin ver
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-backend
+  namespace: mutluet-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: mutluet-backend
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+    ports:
+    - port: 3001
+      protocol: TCP
+---
+# Backend → MongoDB Atlas HTTPS erişimi
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-mongodb
+  namespace: mutluet-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: mutluet-backend
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - port: 27017     # MongoDB
+      protocol: TCP
+    - port: 443       # Atlas HTTPS
+      protocol: TCP

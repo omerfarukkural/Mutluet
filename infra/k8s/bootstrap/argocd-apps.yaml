@@ -1,0 +1,78 @@
+# Argo CD Application — mutluet-backend GitOps tanımı
+# Bu dosya Argo CD'nin hangi Git path'ini hangi cluster'a senkronize edeceğini tanımlar.
+# Ön koşul: Argo CD cluster'a kurulu olmalı (mutluet-ops namespace'inde)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mutluet-backend
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: mutluet
+  source:
+    repoURL: https://github.com/omerfarukkural/Mutluet.git
+    targetRevision: main
+    path: infra/k8s/apps/backend
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mutluet-prod
+  syncPolicy:
+    automated:
+      prune: true          # Git'ten silinen kaynakları cluster'dan da sil
+      selfHeal: true       # Manuel değişiklikleri Git'e döndür
+    syncOptions:
+    - CreateNamespace=false   # Namespace önceden bootstrap'ta oluşturulmuş olmalı
+    - PrunePropagationPolicy=foreground
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+---
+# Argo CD Application — politikalar ve güvenlik yapılandırması
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mutluet-policies
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"   # Politikalar uygulamadan önce kurulur
+spec:
+  project: mutluet
+  source:
+    repoURL: https://github.com/omerfarukkural/Mutluet.git
+    targetRevision: main
+    path: infra/k8s/policies
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mutluet-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+# Argo CD AppProject — mutluet projesi izin kapsamı
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: mutluet
+  namespace: argocd
+spec:
+  description: Mutluet ve Bitebimuv uygulama projesi
+  sourceRepos:
+  - https://github.com/omerfarukkural/Mutluet.git
+  destinations:
+  - namespace: mutluet-prod
+    server: https://kubernetes.default.svc
+  - namespace: mutluet-staging
+    server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+  - group: "kyverno.io"
+    kind: ClusterPolicy
+  - group: "external-secrets.io"
+    kind: ClusterSecretStore
+  namespaceResourceBlacklist:
+  - group: ""
+    kind: ResourceQuota   # Kaynak kota değişiklikleri manuel onay gerektirir

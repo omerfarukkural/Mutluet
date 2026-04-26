@@ -1,0 +1,184 @@
+# AI-Ajan Fabrikası — Zamanlama ve Rol Tanımları
+# Saat dilimi: Europe/Istanbul
+# Kural: Ajanlar 7/24 yazabilir ama merge/deploy "gates" saatleri sabittir.
+
+timezone: Europe/Istanbul
+
+# =============================================================================
+# MERGE / DEPLOY KAPILARI (gates)
+# Bu saatler dışında merge ve deploy otomatik olarak engellenir.
+# =============================================================================
+deploy_gates:
+  allowed_hours:
+    start: "10:00"
+    end: "22:00"
+  allowed_days: [Mon, Tue, Wed, Thu, Fri, Sat]
+  emergency_override: false   # true yapılırsa gate bypass edilir (on-call onayı gerekir)
+
+# =============================================================================
+# AJAN ROLLERI VE ZAMANLAMASI
+# =============================================================================
+agents:
+
+  # ---------------------------------------------------------------------------
+  # 1. Araştırma Ajanı — veri toplama ve ihtiyaç analizi
+  # ---------------------------------------------------------------------------
+  - id: research-agent
+    name: Araştırma Ajanı
+    schedule:
+      cron: "0 2 * * *"      # Her gece 02:00
+      duration_max_minutes: 180
+    inputs:
+      - site_analytics
+      - support_tickets
+      - backlog_items
+      - social_signals
+      - wordpress_comments
+    outputs:
+      - path: artifacts/research/summary-{date}.md
+        format: markdown
+      - path: artifacts/research/signals-{date}.json
+        format: json
+    tools:
+      - wordpress_rest_api
+      - mongodb_atlas_read
+    audit_required: true
+
+  # ---------------------------------------------------------------------------
+  # 2. Ürün Yönetimi Ajanı — ihtiyaç skorlama ve karar taslağı
+  # ---------------------------------------------------------------------------
+  - id: product-manager-agent
+    name: Ürün Yönetimi Ajanı
+    schedule:
+      cron: "0 5 * * *"      # Her gece 05:00 (araştırma ajanından sonra)
+      duration_max_minutes: 60
+    depends_on: [research-agent]
+    inputs:
+      - artifacts/research/signals-{date}.json
+    outputs:
+      - path: artifacts/product/shortlist-{date}.yaml
+        format: yaml
+        schema: product-shortlist-v1
+    scoring_criteria:
+      - impact           # kullanıcı etkisi
+      - urgency          # aciliyet
+      - cost             # maliyet
+      - risk             # teknik risk
+    audit_required: true
+
+  # ---------------------------------------------------------------------------
+  # 3. Mimari Ajan — seçilen ürün için mimari çıktı
+  # ---------------------------------------------------------------------------
+  - id: architecture-agent
+    name: Mimari Ajan
+    schedule:
+      cron: "0 10 * * 1-5"   # Hafta içi her gün 10:00
+      duration_max_minutes: 120
+    depends_on: [product-manager-agent]
+    inputs:
+      - artifacts/product/shortlist-{date}.yaml
+      - specs/{product_id}/spec.yaml
+    outputs:
+      - path: artifacts/architecture/{product_id}/arch-{date}.md
+      - path: artifacts/architecture/{product_id}/data-model.yaml
+      - path: artifacts/architecture/{product_id}/integration-matrix.yaml
+    audit_required: true
+
+  # ---------------------------------------------------------------------------
+  # 4. Kod Üretim Ajanı — monorepo şablonlarından modül üretimi
+  # ---------------------------------------------------------------------------
+  - id: code-gen-agent
+    name: Kod Üretim Ajanı
+    schedule:
+      cron: "0 13 * * 1-5"   # Hafta içi her gün 13:00
+      duration_max_minutes: 240
+    depends_on: [architecture-agent]
+    inputs:
+      - artifacts/architecture/{product_id}/arch-{date}.md
+      - specs/{product_id}/spec.yaml
+    outputs:
+      - path: src/                # monorepo içine üretir
+      - path: backend/src/
+    constraints:
+      spec_compliance_check: required   # spec'e aykırı kod üretemez
+      no_secrets_in_code: required      # secret'lar env/vault'tan gelir
+    audit_required: true
+
+  # ---------------------------------------------------------------------------
+  # 5. Test Ajanı — test kapsamını zorla
+  # ---------------------------------------------------------------------------
+  - id: test-agent
+    name: Test Ajanı
+    schedule:
+      cron: "0 17 * * 1-5"   # Hafta içi her gün 17:00
+      duration_max_minutes: 120
+    depends_on: [code-gen-agent]
+    checks:
+      - type: unit_test
+        min_coverage: 80
+      - type: integration_test
+        required: true
+      - type: e2e_test
+        required: false
+    audit_required: true
+
+  # ---------------------------------------------------------------------------
+  # 6. Güvenlik Ajanı — supply chain ve policy kontrolü
+  # ---------------------------------------------------------------------------
+  - id: security-agent
+    name: Güvenlik Ajanı
+    schedule:
+      cron: "30 17 * * 1-5"  # Hafta içi her gün 17:30
+      duration_max_minutes: 90
+    depends_on: [code-gen-agent]
+    checks:
+      - type: secret_scan        # gizli anahtar sızıntısı
+        tool: gitleaks
+      - type: dependency_scan    # CVE taraması
+        tool: trivy
+      - type: container_hardening
+        tool: trivy
+      - type: policy_check       # Kyverno politika uyumluluğu
+        tool: kyverno-cli
+      - type: supply_chain_attestation
+        tool: cosign
+    audit_required: true
+
+  # ---------------------------------------------------------------------------
+  # 7. Dağıtım Ajanı — GitOps PR ve Argo CD sync
+  # ---------------------------------------------------------------------------
+  - id: deploy-agent
+    name: Dağıtım Ajanı
+    schedule:
+      cron: "0 20 * * 1-5"   # Hafta içi her gün 20:00 (deploy gate içinde)
+      duration_max_minutes: 60
+    depends_on: [test-agent, security-agent]
+    gate_check: deploy_gates   # deploy_gates saatlerine uyulur
+    actions:
+      - open_gitops_pr
+      - monitor_argocd_sync
+      - canary_rollout
+      - auto_rollback_on_failure
+    audit_required: true
+
+  # ---------------------------------------------------------------------------
+  # 8. Gözlemleme Ajanı — SLO/SLI ve geri besleme
+  # ---------------------------------------------------------------------------
+  - id: observability-agent
+    name: Gözlemleme Ajanı
+    schedule:
+      cron: "*/15 * * * *"   # Her 15 dakikada bir (sürekli)
+      duration_max_minutes: 5
+    checks:
+      - type: slo_availability
+        target: "99.5%"
+      - type: slo_latency_p99
+        target: "2s"
+      - type: error_rate
+        threshold: "1%"
+    alert_channels:
+      - sentry
+      - slack          # SLACK_WEBHOOK_URL ile
+    feedback_loop:
+      on_slo_breach: notify_product_manager_agent
+    audit_required: false

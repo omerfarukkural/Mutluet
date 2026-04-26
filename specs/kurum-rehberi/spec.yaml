@@ -1,0 +1,65 @@
+meta:
+  product_id: kurum-rehberi
+  version: "1.0"
+  status: review
+  created_at: 2026-04-26
+  owner: omerfarukkural
+
+purpose: >
+  Kullanıcıların yakın çevrelerindeki doğrulanmış yardım kurumlarını (NGO, kriz merkezi,
+  hizmet noktası) harita tabanlı olarak bulmasını ve iletişim bilgilerine ulaşmasını sağlar.
+
+user_types:
+  - bireysel_kullanici
+  - gonullu
+  - organizasyon
+
+out_of_scope:
+  - Ödeme işlemleri (ayrı ürün: bagis-sistemi)
+  - Video görüşme (ayrı modül: iletisim-modulu)
+  - İçerik editörlüğü (WordPress üzerinden yönetilir)
+
+functions:
+  - id: F-001
+    name: Yakın kurum arama
+    acceptance_criteria:
+      - Kullanıcı 5 km yarıçapında kurum listesi görmeli
+      - Liste yanıt süresi < 2s olmalı
+      - Sonuçlar kategori filtresiyle daraltılabilmeli (sağlık, eğitim, barınma, gıda, hukuki)
+
+  - id: F-002
+    name: Kurum profili görüntüleme
+    acceptance_criteria:
+      - Adres, iletişim, çalışma saatleri ve hizmet açıklaması gösterilmeli
+      - Kuruma yol tarifi bağlantısı (Google Maps deep link) olmalı
+      - Kurum doğrulama rozeti gösterilmeli
+
+  - id: F-003
+    name: Kurum ekleme/güncelleme talebi
+    acceptance_criteria:
+      - Kullanıcı yeni kurum önerisi gönderebilmeli
+      - Admin onay akışı zorunlu olmalı
+      - Onaylanan kurumlar WordPress üzerinden içerik olarak yayınlanmalı
+
+data_classification:
+  contains_pii: false
+  kvkk_required: false
+  data_types:
+    - location    # yakın arama için coarse konum (hassas GPS değil)
+
+integrations:
+  - wordpress_rest_api   # kurum içerikleri WordPress'ten çekilir
+  - mongodb_atlas        # koordinat + arama indeksi
+  - google_maps_api      # harita ve yol tarifi
+
+slo:
+  availability: "99.5%"
+  latency_p99: "2s"
+
+cost_limit_monthly_usd: 30
+
+release_criteria:
+  test_coverage_min: 80
+  security_scan: required
+  spec_compliance: required
+  load_test: optional

@@ -1,0 +1,43 @@
+# Ürün Spesifikasyon Şablonu
+# Kopyala: cp specs/_template/spec.yaml specs/<product-id>/spec.yaml
+
+meta:
+  product_id: __FILL__        # örn: kurum-rehberi
+  version: "1.0"
+  status: draft               # draft | review | approved | deprecated
+  created_at: __FILL__        # YYYY-MM-DD
+  owner: __FILL__             # GitHub kullanıcı adı veya takım adı
+
+purpose: >
+  __FILL__ — Bu ürünün hangi kullanıcı sorununu çözdüğünü tek cümleyle açıkla.
+
+user_types:
+  - __FILL__                  # örn: bireysel_kullanici, gonullu, organizasyon
+
+out_of_scope:
+  - __FILL__                  # Bu ürünün kapsamı dışındaki şeyler
+
+functions:
+  - id: F-001
+    name: __FILL__
+    acceptance_criteria:
+      - __FILL__
+
+data_classification:
+  contains_pii: false         # true | false
+  kvkk_required: false        # true | false
+  data_types: []              # örn: [email, phone, location]
+
+integrations: []              # örn: [wordpress_rest_api, mongodb_atlas, stripe]
+
+slo:
+  availability: "99.5%"
+  latency_p99: "2s"
+
+cost_limit_monthly_usd: 0     # Aylık maksimum maliyet limiti (USD)
+
+release_criteria:
+  test_coverage_min: 80       # Minimum test kapsamı (%)
+  security_scan: required     # required | optional
+  spec_compliance: required   # required | optional
+  load_test: optional         # required | optional

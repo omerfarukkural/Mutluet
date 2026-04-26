@@ -1,0 +1,109 @@
+# Kyverno Politikası 1: İmzasız container image'ların cluster'a girmesini engelle
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-unsigned-images
+  annotations:
+    policies.kyverno.io/title: İmzasız Image Yasağı
+    policies.kyverno.io/description: >
+      Sigstore/cosign ile imzalanmamış container image'ların cluster'a
+      girmesini engeller. SLSA provenance attestation zorunludur.
+spec:
+  validationFailureAction: Enforce
+  background: false
+  rules:
+  - name: check-image-signature
+    match:
+      any:
+      - resources:
+          kinds: [Pod]
+          namespaces: [mutluet-prod]
+    verifyImages:
+    - imageReferences:
+      - "ghcr.io/omerfarukkural/*"
+      attestors:
+      - entries:
+        - keyless:
+            subject: "https://github.com/omerfarukkural/Mutluet/.github/workflows/*"
+            issuer: "https://token.actions.githubusercontent.com"
+---
+# Kyverno Politikası 2: Üretim namespace'inde root olarak çalışmayı engelle
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-root-containers
+  annotations:
+    policies.kyverno.io/title: Root Container Yasağı
+    policies.kyverno.io/description: >
+      Üretim pod'larında container'ların root (uid=0) olarak çalışmasını engeller.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: check-runAsNonRoot
+    match:
+      any:
+      - resources:
+          kinds: [Pod]
+          namespaces: [mutluet-prod]
+    validate:
+      message: "Container'lar root olarak çalışamaz. runAsNonRoot: true ekle."
+      pattern:
+        spec:
+          containers:
+          - securityContext:
+              runAsNonRoot: true
+---
+# Kyverno Politikası 3: Resource limit zorunluluğu
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-limits
+  annotations:
+    policies.kyverno.io/title: Resource Limit Zorunluluğu
+    policies.kyverno.io/description: >
+      Üretim pod'larında CPU ve memory limiti tanımlanmasını zorunlu kılar.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: check-container-resources
+    match:
+      any:
+      - resources:
+          kinds: [Pod]
+          namespaces: [mutluet-prod]
+    validate:
+      message: "CPU ve memory limiti zorunludur."
+      pattern:
+        spec:
+          containers:
+          - resources:
+              limits:
+                memory: "?*"
+                cpu: "?*"
+---
+# Kyverno Politikası 4: Privileged container yasağı
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-privileged-containers
+  annotations:
+    policies.kyverno.io/title: Privileged Container Yasağı
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+  - name: check-privileged
+    match:
+      any:
+      - resources:
+          kinds: [Pod]
+          namespaces: [mutluet-prod, mutluet-staging]
+    validate:
+      message: "Privileged container'lara izin verilmez."
+      pattern:
+        spec:
+          containers:
+          - =(securityContext):
+              =(privileged): false
