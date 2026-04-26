@@ -1,0 +1,149 @@
+# Bitebimuv Ürün Spesifikasyon Sözleşmesi
+# Bu dosya, Bitebimuv içerik ve platform yönetimi ürünü için kaynak-of-truth spec'tir.
+# Ajanlar kodu değiştirebilir, ancak bu spec'e aykırı davranamaz.
+# CI'da otomatik compliance check uygulanır; spec'e aykırı PR merge edilemez.
+
+metadata:
+  product: bitebimuv
+  version: "1.0"
+  owner: omerfarukkural
+  siteUrl: https://bitebimuv.org
+  lastUpdated: "2026-04-26"
+
+purpose: >
+  Bitebimuv; sivil toplum, gönüllülük ve sosyal yardım alanında Türkiye'nin
+  önde gelen içerik, haber ve kaynak platformudur. WordPress tabanlı içerik
+  yönetiminin yanında, Mutluet uygulama ekosistemine SSO ve içerik entegrasyonu
+  sağlar. AI ajan fabrikasının "içerik yüzü" olarak çalışır.
+
+userTypes:
+  - type: reader
+    description: İçerik okuyan genel ziyaretçi
+    permissions: [browse, read, search]
+  - type: subscriber
+    description: E-posta abonesi
+    permissions: [browse, read, search, receive_newsletter]
+  - type: contributor
+    description: İçerik katkıcısı
+    permissions: [browse, read, search, submit_content]
+  - type: editor
+    description: İçerik editörü
+    permissions: [browse, read, search, create_content, edit_content, publish_content]
+  - type: admin
+    description: Site yöneticisi
+    permissions: [all]
+
+outOfScope:
+  - E-ticaret
+  - Kullanıcı profili yönetimi (bu Mutluet'te)
+  - Bağış işleme (bu Mutluet'te)
+  - Gerçek zamanlı mesajlaşma
+
+functions:
+  - id: B-001
+    name: İçerik Yayıncılığı
+    priority: critical
+    platform: WordPress
+    acceptanceCriteria:
+      - Blog yazıları, haberler ve kaynaklar yayınlanabilmeli
+      - Kategoriler ve etiketler ile içerik organize edilebilmeli
+      - Medya (resim, video) yüklenip yönetilebilmeli
+      - SEO meta alanları doldurulabilmeli
+
+  - id: B-002
+    name: WordPress REST API Entegrasyonu
+    priority: critical
+    acceptanceCriteria:
+      - REST API üzerinden içerik okunabilmeli (public)
+      - Application Password ile kimlik doğrulama çalışmalı
+      - AI ajan fabrikası otomatik içerik basabilmeli
+      - Medya yükleme API üzerinden yapılabilmeli
+
+  - id: B-003
+    name: Mutluet SSO Entegrasyonu
+    priority: high
+    acceptanceCriteria:
+      - Mutluet kullanıcıları tek tıkla Bitebimuv'a giriş yapabilmeli
+      - SSO token 5 dakika geçerli olmalı
+      - Token WordPress oturumuna dönüştürülmeli
+
+  - id: B-004
+    name: Kurum ve Hizmet Rehberi
+    priority: high
+    acceptanceCriteria:
+      - Doğrulanmış STK ve hizmet noktaları listelenebilmeli
+      - Konum bazlı filtreleme yapılabilmeli
+      - İletişim bilgileri güncel tutulabilmeli
+
+  - id: B-005
+    name: Arama ve Keşif
+    priority: high
+    acceptanceCriteria:
+      - İçerik arama fonksiyonu çalışmalı
+      - Kategori bazlı tarama yapılabilmeli
+      - Öne çıkan içerikler anasayfada gösterilebilmeli
+
+  - id: B-006
+    name: Factory WP Eklentisi
+    priority: medium
+    acceptanceCriteria:
+      - WordPress admin'e "Mutluet Factory" sayfası eklenebilmeli
+      - İhtiyaç analizi başlatılabilmeli
+      - CI/GitOps durumları görüntülenebilmeli
+      - Yayın raporu üretilebilmeli
+
+dataClassification:
+  pii:
+    - email (aboneler için)
+    - ipAddress (log)
+  kvkk: true
+  gdpr: false
+  dataRetentionDays: 730
+  rightToErasure: true
+
+integrations:
+  - name: Mutluet API
+    type: sso
+    authMethod: jwt
+    secretKey: WORDPRESS_JWT_SECRET
+  - name: SendGrid / Mailchimp
+    type: newsletter
+    authMethod: api_key
+    secretKey: SENDGRID_API_KEY
+  - name: Google Analytics
+    type: analytics
+    authMethod: tracking_id
+    secretKey: GA_TRACKING_ID
+  - name: AI Ajan Fabrikası
+    type: content_automation
+    authMethod: application_password
+    secretKey: WP_APP_PASSWORD
+
+sloTargets:
+  availability: "99.5%"
+  pageLoadMs: 2000
+  corePedWebVitals:
+    lcp: "2.5s"
+    fid: "100ms"
+    cls: "0.1"
+
+techStack:
+  cms: WordPress 6.x
+  hosting: WordPress Hosting (Azure App Service veya WP Engine)
+  cdn: Azure CDN
+  search: WordPress native + Elasticsearch (opsiyonel)
+
+contentAutomation:
+  enabled: true
+  agent: AI Ajan Fabrikası
+  authMethod: WordPress Application Passwords
+  schedule: "Gündüz döngüsü (10:00–17:00)"
+  auditLog: true
+  humanReviewRequired: true
+
+releaseCriteria:
+  - WordPress plugin/tema güncellemeleri test ortamında doğrulanmalı
+  - REST API endpoint'leri çalışmalı
+  - SSO entegrasyonu test edilmeli
+  - Sayfa yükleme süresi < 2 saniye
+  - Güvenlik taraması (WPScan) temiz

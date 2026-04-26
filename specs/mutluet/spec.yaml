@@ -1,0 +1,206 @@
+# Mutluet Ürün Spesifikasyon Sözleşmesi
+# Bu dosya, Mutluet ürünü için kaynak-of-truth spec'tir.
+# Ajanlar kodu değiştirebilir, ancak bu spec'e aykırı davranamaz.
+# CI'da otomatik compliance check uygulanır; spec'e aykırı PR merge edilemez.
+
+metadata:
+  product: mutluet
+  version: "1.1"
+  owner: omerfarukkural
+  repository: https://github.com/omerfarukkural/Mutluet
+  lastUpdated: "2026-04-26"
+
+purpose: >
+  Gönüllüler, bağışçılar ve sivil toplum kuruluşlarını birbirine bağlayan,
+  toplumsal etki yaratan kapsamlı bir sosyal hizmet platformu.
+  Kullanıcıların bağış yapmasını, etkinliklere katılmasını, gönüllü saatlerini
+  takip etmesini ve STK'larla iletişim kurmasını sağlar.
+
+userTypes:
+  - type: user
+    description: Genel platform kullanıcısı
+    permissions: [browse, donate, join_events, chat]
+  - type: volunteer
+    description: Gönüllü saatleri takip eden, etkinliklere katılan bireyler
+    permissions: [browse, donate, join_events, chat, track_hours, earn_achievements]
+  - type: donor
+    description: Bağış yapan bireyler ve kurumlar
+    permissions: [browse, donate, view_donation_history]
+  - type: organization
+    description: STK'lar ve destek merkezleri
+    permissions: [browse, manage_events, manage_volunteers, receive_donations]
+  - type: admin
+    description: Platform yöneticileri
+    permissions: [all]
+
+outOfScope:
+  - E-ticaret (ürün satışı, alışveriş sepeti)
+  - Sosyal medya özellikleri (beğeni sayısı, takipçi listesi, hashtag keşfi)
+  - Kripto para bağışları
+  - İçerik monetizasyonu
+  - Reklam platformu
+
+functions:
+  - id: F-001
+    name: Kullanıcı Kimlik Doğrulama
+    priority: critical
+    acceptanceCriteria:
+      - Email/şifre ile kayıt ve giriş çalışmalı
+      - Google OAuth çalışmalı
+      - Facebook OAuth çalışmalı
+      - JWT token 24 saat geçerli olmalı
+      - Şifreler bcrypt ile hashlenmiş olmalı
+      - Magic Link ile giriş desteklenmeli
+
+  - id: F-002
+    name: Bağış Sistemi
+    priority: critical
+    acceptanceCriteria:
+      - Stripe ile güvenli ödeme alınabilmeli
+      - Bağış geçmişi görüntülenebilmeli
+      - Bağış makbuzu/onayı iletilmeli
+      - Tekrarlayan bağış kurulabilmeli
+
+  - id: F-003
+    name: Etkinlik Yönetimi
+    priority: high
+    acceptanceCriteria:
+      - Etkinlik listesi görüntülenebilmeli
+      - Yaklaşan etkinlikler filtrelenebilmeli
+      - Etkinliğe katılım kaydı yapılabilmeli
+      - Organizasyonlar etkinlik oluşturabilmeli
+
+  - id: F-004
+    name: Gönüllü Yönetimi
+    priority: high
+    acceptanceCriteria:
+      - Gönüllü saatleri takip edilebilmeli
+      - Başarımlar (achievements) kazanılabilmeli
+      - Liderlik tablosu görüntülenebilmeli
+      - Gönüllü profili düzenlenebilmeli
+
+  - id: F-005
+    name: Gerçek Zamanlı Mesajlaşma
+    priority: high
+    acceptanceCriteria:
+      - Socket.IO ile gerçek zamanlı mesaj gönderilip alınabilmeli
+      - Konuşma geçmişi görüntülenebilmeli
+      - Okundu bilgisi gösterilmeli
+
+  - id: F-006
+    name: Video Görüşme
+    priority: medium
+    acceptanceCriteria:
+      - Azure Communication Services ile video görüşme başlatılabilmeli
+      - Görüşme oda bağlantısı oluşturulabilmeli
+
+  - id: F-007
+    name: Organizasyon Dizini
+    priority: medium
+    acceptanceCriteria:
+      - Organizasyon listesi görüntülenebilmeli
+      - Yakındaki organizasyonlar konum bazlı bulunabilmeli
+      - Organizasyon profili görüntülenebilmeli
+
+  - id: F-008
+    name: Sosyal Eşleştirme
+    priority: medium
+    acceptanceCriteria:
+      - İlgi alanları bazlı potansiyel gönüllü eşleştirmesi yapılabilmeli
+      - Eşleşme kabul/red edilebilmeli
+
+  - id: F-009
+    name: Admin Paneli
+    priority: high
+    acceptanceCriteria:
+      - Admin kullanıcı yönetimi yapabilmeli (listeleme, rol değiştirme, engelleme)
+      - Admin etkinlikleri yönetebilmeli
+      - Admin bağış raporlarını görebilmeli
+      - Admin organizasyonları onaylayabilmeli
+
+dataClassification:
+  pii:
+    - email
+    - phone
+    - fullName
+    - address
+    - ipAddress
+    - profilePhoto
+  sensitive:
+    - paymentMethodId
+    - donationAmount
+  kvkk: true
+  gdpr: false
+  dataRetentionDays: 365
+  rightToErasure: true
+
+integrations:
+  - name: Stripe
+    type: payment
+    authMethod: api_key
+    secretKey: STRIPE_SECRET_KEY
+  - name: Google OAuth
+    type: authentication
+    authMethod: oauth2
+    secretKey: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+  - name: Facebook OAuth
+    type: authentication
+    authMethod: oauth2
+    secretKey: FACEBOOK_APP_ID, FACEBOOK_APP_SECRET
+  - name: Azure Communication Services
+    type: video
+    authMethod: connection_string
+    secretKey: AZURE_COMMUNICATION_CONNECTION_STRING
+  - name: WordPress (bitebimuv.org)
+    type: content_sso
+    authMethod: application_password
+    secretKey: WP_APP_PASSWORD
+  - name: SendGrid
+    type: email
+    authMethod: api_key
+    secretKey: SENDGRID_API_KEY
+
+sloTargets:
+  availability: "99.9%"
+  p99LatencyMs: 500
+  errorRate: "0.1%"
+  rtoMinutes: 60
+  rpoMinutes: 15
+
+costLimit:
+  monthly: 150
+  currency: USD
+  alertThreshold: "80%"
+
+techStack:
+  frontend:
+    framework: React 18
+    language: TypeScript
+    buildTool: Vite
+    styling: TailwindCSS
+    components: [Radix UI, Material-UI]
+    routing: React Router v7
+  backend:
+    runtime: Node.js 22
+    framework: Express.js
+    language: TypeScript
+    orm: Prisma
+    database: PostgreSQL 16
+    realtime: Socket.IO
+    auth: JWT + OAuth2
+  infrastructure:
+    primaryCloud: Azure
+    containerOrchestration: Kubernetes (AKS)
+    gitops: Argo CD
+    secretManagement: Azure Key Vault + External Secrets Operator
+    cicd: GitHub Actions
+
+releaseCriteria:
+  - Tüm F-xxx kabul kriterleri geçmeli (automated tests)
+  - Backend test coverage ≥ 80%
+  - Frontend build başarılı olmalı
+  - TypeScript derleme hatası olmamalı
+  - Güvenlik taraması temiz (no high/critical vulnerabilities)
+  - Spec compliance check geçmeli
+  - Docker image başarıyla build edilmeli
+  - SLSA provenance attestation mevcut olmalı

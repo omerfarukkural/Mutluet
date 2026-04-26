@@ -1,0 +1,177 @@
+# Kubernetes NetworkPolicy Yapılandırması
+# Varsayılan reddetme (default-deny) deseni uygulanır.
+# "Policy yoksa her şey açık" durumu önlenir.
+# Gereken trafik açıkça izin verilenler listesine alınır.
+---
+# ── mutluet-prod namespace: Varsayılan Tüm Trafiği Reddet ───────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: mutluet-prod
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# Backend pod'larına yalnızca ingress controller'dan gelen trafiğe izin ver
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-backend
+  namespace: mutluet-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: mutluet-backend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3001
+
+---
+# Backend → PostgreSQL (Supabase/Azure DB) çıkış trafiğine izin ver
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-database
+  namespace: mutluet-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: mutluet-backend
+  policyTypes:
+    - Egress
+  egress:
+    # PostgreSQL
+    - ports:
+        - protocol: TCP
+          port: 5432
+    # MongoDB Atlas (external)
+    - ports:
+        - protocol: TCP
+          port: 27017
+    # DNS
+    - ports:
+        - protocol: UDP
+          port: 53
+
+---
+# Backend → Azure Key Vault / Dış servisler (HTTPS)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-external-services
+  namespace: mutluet-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: mutluet-backend
+  policyTypes:
+    - Egress
+  egress:
+    # HTTPS (Azure Key Vault, Stripe, SendGrid, OAuth providers vb.)
+    - ports:
+        - protocol: TCP
+          port: 443
+    # DNS
+    - ports:
+        - protocol: UDP
+          port: 53
+
+---
+# Frontend pod'larına ingress controller'dan trafik
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-frontend
+  namespace: mutluet-prod
+spec:
+  podSelector:
+    matchLabels:
+      app: mutluet-frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 80
+
+---
+# Monitoring namespace'inden scraping trafiğine izin ver
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scraping
+  namespace: mutluet-prod
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9090  # Prometheus metrics port
+
+---
+# ── agent-factory namespace: Varsayılan Reddet ──────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: agent-factory
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# Ajan fabrikası → HTTPS çıkışı (AI API'leri, GitHub, external tools)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-agent-factory-egress
+  namespace: agent-factory
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: agent-factory
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - protocol: TCP
+          port: 443
+    - ports:
+        - protocol: UDP
+          port: 53
+
+---
+# ── bitebimuv-prod namespace: Varsayılan Reddet ─────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: bitebimuv-prod
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
