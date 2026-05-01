@@ -474,8 +474,12 @@ router.post('/ai/query', authMiddleware, adminOnly, async (req: AuthRequest, res
       return res.status(400).json({ error: 'Sorgu metni zorunludur' });
     }
 
-    // Remove SQL comments before checking (/* */ and -- style)
-    const stripped = query.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--[^\n]*/g, '').trim();
+    // Reject queries containing SQL comments (/* */ or --) to avoid parsing ambiguity
+    if (query.includes('--') || query.includes('/*')) {
+      return res.status(400).json({ error: 'Güvenlik: SQL yorumları desteklenmiyor' });
+    }
+
+    const stripped = query.trim();
 
     // Güvenlik: Sadece SELECT sorgularına izin ver
     const normalizedQuery = stripped.toUpperCase();
@@ -492,8 +496,10 @@ router.post('/ai/query', authMiddleware, adminOnly, async (req: AuthRequest, res
       }
     }
 
-    // Limit rows to prevent large data extraction
-    const limitedQuery = stripped.replace(/;.*$/, '') + ' LIMIT 100';
+    // Limit rows to prevent large data extraction; avoid duplicate LIMIT if already present
+    const baseQuery = stripped.replace(/;.*$/, '');
+    const hasLimit = /\bLIMIT\b/i.test(baseQuery);
+    const limitedQuery = hasLimit ? baseQuery : baseQuery + ' LIMIT 100';
     const result = await prisma.$queryRawUnsafe(limitedQuery);
     res.json({ result, rowCount: Array.isArray(result) ? result.length : 0 });
   } catch (error: any) {

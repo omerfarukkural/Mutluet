@@ -17,7 +17,18 @@ const authLimiter = rateLimit({
 
 // Helpers
 function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  if (typeof email !== 'string' || email.length > 254 || email.length < 5) return false;
+  // Non-backtracking check: split on last '@' and validate parts individually
+  const atIdx = email.lastIndexOf('@');
+  if (atIdx < 1) return false;
+  const local = email.slice(0, atIdx);
+  const domain = email.slice(atIdx + 1);
+  if (local.length === 0 || local.length > 64) return false;
+  if (domain.length < 3 || domain.startsWith('.') || domain.endsWith('.')) return false;
+  if (!domain.includes('.')) return false;
+  // Reject whitespace characters in any part
+  if (/\s/.test(local) || /\s/.test(domain)) return false;
+  return true;
 }
 
 function isStrongPassword(password: string): boolean {

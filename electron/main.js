@@ -68,13 +68,23 @@ app.on('window-all-closed', () => {
 
 // Security: Prevent navigation to unexpected URLs
 app.on('web-contents-created', (_event, contents) => {
+  const distPath = path.join(__dirname, '../dist');
+
   contents.on('will-navigate', (event, navigationUrl) => {
-    const parsedUrl = new URL(navigationUrl);
-    const allowedOrigins = ['http://localhost:5173', 'file://'];
-    const isAllowed = allowedOrigins.some(
-      (origin) => navigationUrl.startsWith(origin)
-    );
-    if (!isAllowed && parsedUrl.origin !== 'null') {
+    let allowed = false;
+
+    if (isDev && navigationUrl.startsWith('http://localhost:5173')) {
+      allowed = true;
+    } else if (!isDev && navigationUrl.startsWith('file://')) {
+      try {
+        const filePath = new URL(navigationUrl).pathname;
+        allowed = filePath.startsWith(distPath);
+      } catch {
+        allowed = false;
+      }
+    }
+
+    if (!allowed) {
       event.preventDefault();
     }
   });
