@@ -344,9 +344,20 @@ router.post('/organizations', authMiddleware, adminOnly, async (req: AuthRequest
 router.patch('/organizations/:orgId', authMiddleware, adminOnly, async (req: AuthRequest, res) => {
   try {
     const orgId = req.params.orgId as string;
+    const { name, description, category, address, latitude, longitude, phone, website, verified } = req.body;
     const org = await prisma.organization.update({
       where: { id: orgId },
-      data: req.body,
+      data: {
+        ...(name !== undefined && { name }),
+        ...(description !== undefined && { description }),
+        ...(category !== undefined && { category }),
+        ...(address !== undefined && { address }),
+        ...(latitude !== undefined && { latitude }),
+        ...(longitude !== undefined && { longitude }),
+        ...(phone !== undefined && { phone }),
+        ...(website !== undefined && { website }),
+        ...(verified !== undefined && { verified }),
+      },
     });
     res.json(org);
   } catch (error) {
@@ -459,21 +470,31 @@ router.post('/ai/query', authMiddleware, adminOnly, async (req: AuthRequest, res
   try {
     const { query } = req.body;
 
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ error: 'Sorgu metni zorunludur' });
+    }
+
+    // Remove SQL comments before checking (/* */ and -- style)
+    const stripped = query.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--[^\n]*/g, '').trim();
+
     // Güvenlik: Sadece SELECT sorgularına izin ver
-    const normalizedQuery = query.trim().toUpperCase();
+    const normalizedQuery = stripped.toUpperCase();
     if (!normalizedQuery.startsWith('SELECT')) {
       return res.status(400).json({ error: 'Güvenlik: Sadece SELECT sorguları desteklenir' });
     }
 
-    // Tehlikeli kelimeleri kontrol et
-    const forbidden = ['DROP', 'DELETE', 'UPDATE', 'INSERT', 'ALTER', 'TRUNCATE', 'CREATE'];
+    // Tehlikeli kelimeleri kontrol et (word boundaries)
+    const forbidden = ['DROP', 'DELETE', 'UPDATE', 'INSERT', 'ALTER', 'TRUNCATE', 'CREATE', 'EXEC', 'EXECUTE', 'GRANT', 'REVOKE', 'COPY'];
     for (const word of forbidden) {
-      if (normalizedQuery.includes(word)) {
+      const pattern = new RegExp(`\\b${word}\\b`);
+      if (pattern.test(normalizedQuery)) {
         return res.status(400).json({ error: `Güvenlik: ${word} komutu izin verilmiyor` });
       }
     }
 
-    const result = await prisma.$queryRawUnsafe(query);
+    // Limit rows to prevent large data extraction
+    const limitedQuery = stripped.replace(/;.*$/, '') + ' LIMIT 100';
+    const result = await prisma.$queryRawUnsafe(limitedQuery);
     res.json({ result, rowCount: Array.isArray(result) ? result.length : 0 });
   } catch (error: any) {
     console.error('Admin query error:', error);

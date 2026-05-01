@@ -1,14 +1,49 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
 import prisma from '../config/database.js';
 
 const router = Router();
 
+// Strict rate limiter for auth endpoints (brute-force protection)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Çok fazla giriş denemesi. 15 dakika sonra tekrar deneyin.' },
+});
+
+// Helpers
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isStrongPassword(password: string): boolean {
+  return typeof password === 'string' && password.length >= 8;
+}
+
 // Register with email
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, async (req, res) => {
   try {
     const { email, password, name } = req.body;
+
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: 'E-posta, şifre ve isim zorunludur' });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'Geçersiz e-posta formatı' });
+    }
+
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({ error: 'Şifre en az 8 karakter olmalıdır' });
+    }
+
+    if (typeof name !== 'string' || name.trim().length < 2) {
+      return res.status(400).json({ error: 'İsim en az 2 karakter olmalıdır' });
+    }
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
@@ -21,7 +56,7 @@ router.post('/register', async (req, res) => {
       data: {
         email,
         password: hashedPassword,
-        name,
+        name: name.trim(),
         authProvider: 'EMAIL'
       }
     });
@@ -47,9 +82,17 @@ router.post('/register', async (req, res) => {
 });
 
 // Login with email
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'E-posta ve şifre zorunludur' });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: 'Geçersiz e-posta formatı' });
+    }
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !user.password) {
@@ -130,9 +173,13 @@ router.post('/social/:provider', async (req, res) => {
 });
 
 // Magic link request
-router.post('/magic-link', async (req, res) => {
+router.post('/magic-link', authLimiter, async (req, res) => {
   try {
     const { email } = req.body;
+
+    if (!email || !isValidEmail(email)) {
+      return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin' });
+    }
 
     let user = await prisma.user.findUnique({ where: { email } });
 
@@ -150,14 +197,16 @@ router.post('/magic-link', async (req, res) => {
       expiresIn: '15m' as any
     });
 
-    // TODO: Send email with magic link
+    // TODO: Send email with magic link via SendGrid / Azure Communication Services
     const magicLink = `${process.env.FRONTEND_URL}/auth/verify?token=${token}`;
 
-    // For now, just return the link (in production, send via email)
-    res.json({
-      message: 'Magic link gönderildi',
-      magicLink // Remove in production
-    });
+    if (process.env.NODE_ENV === 'production') {
+      // In production the link is sent via email only — do not expose it in the response
+      res.json({ message: 'Magic link e-posta adresinize gönderildi' });
+    } else {
+      // Development convenience: return the link so it can be tested without email setup
+      res.json({ message: 'Magic link gönderildi', magicLink });
+    }
   } catch (error) {
     console.error('Magic link error:', error);
     res.status(500).json({ error: 'Magic link oluşturulamadı' });
