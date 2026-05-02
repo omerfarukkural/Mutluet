@@ -47,6 +47,16 @@ mutluet_app/.flutter-plugins*
 mutluet_app/build/
 mutluet_app/.packages
 
+# Flutter / Android signing
+.dart_tool/
+.flutter-plugins*
+.flutter-plugins-dependencies
+.metadata
+build/
+android/key.properties
+android/app/*.jks
+android/app/*.keystore
+
 # OS
 .DS_Store
 Thumbs.db

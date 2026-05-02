@@ -1,0 +1,55 @@
+name: AI Self-Update and OTA Patch
+
+on:
+  repository_dispatch:
+    types: [ai_instruction]
+
+jobs:
+  ai_update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: pip install requests
+
+      - name: Run AI Agent
+        env:
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+          PROMPT: ${{ github.event.client_payload.instruction }}
+          TARGET_FILE: ${{ github.event.client_payload.file }}
+        run: python .github/scripts/ai_agent.py "$PROMPT" "$TARGET_FILE"
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "Mutluet AI Agent"
+          git config --global user.email "ai@mutluet.org"
+          git add .
+          git commit -m "AI Update: ${{ github.event.client_payload.instruction }}"
+          git push
+
+  shorebird_patch:
+    needs: ai_update
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Setup Shorebird
+        uses: shorebirdtech/setup-shorebird@v1
+        with:
+          shorebird-token: ${{ secrets.SHOREBIRD_TOKEN }}
+
+      - name: Run Shorebird Patch
+        run: shorebird patch android --force
