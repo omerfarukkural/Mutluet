@@ -9,6 +9,10 @@ coverage
 # Production
 build
 dist
+release
+
+# Electron build output
+out
 
 # Environment
 .env

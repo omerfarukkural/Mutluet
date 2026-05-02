@@ -5,9 +5,25 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "cap:init": "cap init Mutluet org.mutluet.app --web-dir dist",
+    "cap:add:android": "cap add android",
+    "cap:sync": "vite build && cap sync android",
+    "cap:open:android": "cap open android",
+    "cap:run:android": "cap run android",
+    "electron:dev": "concurrently \"vite\" \"cross-env ELECTRON_DEV=true electron electron/main.js\"",
+    "electron:build": "vite build && electron-builder --mac",
+    "electron:build:win": "vite build && electron-builder --win",
+    "electron:build:linux": "vite build && electron-builder --linux"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/cli": "^7.6.2",
+    "@capacitor/core": "^8.3.1",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/keyboard": "^8.0.3",
+    "@capacitor/status-bar": "^8.0.2",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
     "@mui/icons-material": "7.3.5",
@@ -65,10 +81,17 @@
     "vaul": "1.1.2"
   },
   "devDependencies": {
+    "@electron/rebuild": "^4.0.4",
     "@tailwindcss/vite": "4.1.12",
     "@vitejs/plugin-react": "4.7.0",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^41.4.0",
+    "electron-builder": "^26.8.1",
     "tailwindcss": "4.1.12",
-    "vite": "6.3.5"
+    "vite": "6.3.5",
+    "vite-plugin-pwa": "^1.2.0",
+    "workbox-window": "^7.4.0"
   },
   "peerDependencies": {
     "react": "18.3.1",
@@ -82,12 +105,64 @@
       "optional": true
     }
   },
+  "build": {
+    "appId": "org.mutluet.app",
+    "productName": "Mutluet",
+    "copyright": "Copyright © 2024 Bir Tebessüm Bin Mutluluk Derneği",
+    "main": "electron/main.js",
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "mac": {
+      "category": "public.app-category.social-networking",
+      "icon": "public/pwa-512x512.png",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/pwa-512x512.png"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "public/pwa-512x512.png",
+      "category": "Network"
+    }
+  },
   "pnpm": {
     "overrides": {
       "vite": "6.3.5"
     },
     "onlyBuiltDependencies": [],
-    "allowedBuildScripts": ["@tailwindcss/oxide", "@tailwindcss/vite", "esbuild", "sharp"]
+    "allowedBuildScripts": [
+      "@tailwindcss/oxide",
+      "@tailwindcss/vite",
+      "esbuild",
+      "sharp"
+    ]
   },
   "packageManager": "pnpm@10.25.0+sha512.5e82639027af37cf832061bcc6d639c219634488e0f2baebe785028a793de7b525ffcd3f7ff574f5e9860654e098fe852ba8ac5dd5cefe1767d23a020a92f501"
 }

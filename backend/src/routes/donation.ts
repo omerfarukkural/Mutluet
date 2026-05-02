@@ -24,10 +24,20 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
   try {
     const { amount, type, description, stripePaymentId } = req.body;
 
+    const parsedAmount = parseFloat(amount);
+    if (!parsedAmount || parsedAmount <= 0 || !isFinite(parsedAmount)) {
+      return res.status(400).json({ error: 'Geçerli bir bağış miktarı girin (sıfırdan büyük olmalı)' });
+    }
+
+    const validTypes = ['EGITIM', 'GIDA', 'BARINMA', 'HUKUKI', 'SAGLIK', 'DIGER'];
+    if (!type || !validTypes.includes(type)) {
+      return res.status(400).json({ error: 'Geçerli bir bağış türü seçin' });
+    }
+
     const donation = await prisma.donation.create({
       data: {
         userId: req.userId!,
-        amount,
+        amount: parsedAmount,
         type,
         description,
         stripePaymentId
@@ -38,7 +48,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res) => {
     await prisma.user.update({
       where: { id: req.userId },
       data: {
-        totalDonations: { increment: amount }
+        totalDonations: { increment: parsedAmount }
       }
     });
 

@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
@@ -19,21 +21,57 @@ import { setupMonitoring } from './config/monitoring.js';
 
 dotenv.config();
 
+// Validate critical environment variables before starting
+if (!process.env.JWT_SECRET) {
+  console.error('❌ JWT_SECRET ortam değişkeni tanımlı değil. Uygulama başlatılamıyor.');
+  process.exit(1);
+}
+
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim());
+
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: allowedOrigins,
     credentials: true
   }
 });
 
-// Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
+// Security headers
+app.use(helmet({
+  crossOriginEmbedderPolicy: false, // required for Socket.IO
 }));
-app.use(express.json());
+
+// CORS
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. mobile apps, curl)
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error('CORS: Bu kaynaktan erişim izni yok'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Body size limit (prevent request flood / DoS via large payloads)
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Global rate limiter (prevent general abuse)
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Çok fazla istek gönderdiniz, lütfen bir süre bekleyin.' },
+});
+app.use(globalLimiter);
 
 // Routes
 app.use('/api/auth', authRoutes);
