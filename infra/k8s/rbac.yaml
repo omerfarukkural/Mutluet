@@ -1,0 +1,171 @@
+# Kubernetes RBAC Yapılandırması
+# En az yetki (least-privilege) prensibi uygulanır.
+# Ajanlar ve CI sistemleri yalnızca gereken namespace ve kaynaklara erişebilir.
+---
+# ── Mutluet Backend Servis Hesabı ───────────────────────────────────────────
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mutluet-backend
+  namespace: mutluet-prod
+  annotations:
+    # Azure Workload Identity — AAD Pod Identity yerine önerilen yöntem
+    azure.workload.identity/client-id: "${AZURE_CLIENT_ID}"
+  labels:
+    azure.workload.identity/use: "true"
+
+---
+# ── Mutluet Backend Role (yalnızca kendi namespace'inde) ────────────────────
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mutluet-backend-role
+  namespace: mutluet-prod
+rules:
+  # Secret okuma (ESO tarafından oluşturulan secret'ları oku)
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+  # ConfigMap okuma
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list"]
+  # Pod durumu izleme (health check için)
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mutluet-backend-rolebinding
+  namespace: mutluet-prod
+subjects:
+  - kind: ServiceAccount
+    name: mutluet-backend
+    namespace: mutluet-prod
+roleRef:
+  kind: Role
+  apiRef: mutluet-backend-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# ── CI/CD Servis Hesabı (GitHub Actions OIDC) ───────────────────────────────
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: github-actions-deployer
+  namespace: mutluet-prod
+  annotations:
+    # GitHub Actions OIDC ile Workload Identity Federation
+    azure.workload.identity/client-id: "${GITHUB_ACTIONS_CLIENT_ID}"
+
+---
+# CI/CD deploy rolü — deployment güncelleme ve rollout izleme
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: deployer-role
+  namespace: mutluet-prod
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["services", "configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: deployer-rolebinding
+  namespace: mutluet-prod
+subjects:
+  - kind: ServiceAccount
+    name: github-actions-deployer
+    namespace: mutluet-prod
+roleRef:
+  kind: Role
+  name: deployer-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# ── Ajan Fabrikası Servis Hesabı ────────────────────────────────────────────
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: agent-factory-runner
+  namespace: agent-factory
+
+---
+# Ajan fabrikası — salt okunur cluster erişimi (keşif için)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: agent-factory-reader
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces", "pods", "services", "configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: agent-factory-reader-binding
+subjects:
+  - kind: ServiceAccount
+    name: agent-factory-runner
+    namespace: agent-factory
+roleRef:
+  kind: ClusterRole
+  name: agent-factory-reader
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# ── Monitoring Servis Hesabı (Prometheus) ───────────────────────────────────
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: monitoring
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-reader
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "nodes/proxy", "services", "endpoints", "pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["extensions", "networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-reader-binding
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: monitoring
+roleRef:
+  kind: ClusterRole
+  name: prometheus-reader
+  apiGroup: rbac.authorization.k8s.io

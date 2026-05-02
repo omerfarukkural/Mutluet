@@ -1,0 +1,84 @@
+# Kubernetes Namespace Tanımları
+# Kontrol katmanı ve iş yükü katmanı namespace'leri ayrılır.
+# Her namespace kendi Pod Security Standards ve RBAC yapılandırmasına sahiptir.
+---
+# ── Platform / Kontrol Katmanı Namespace'leri ──────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  labels:
+    app.kubernetes.io/part-of: platform
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: external-secrets
+  labels:
+    app.kubernetes.io/part-of: platform
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/part-of: platform
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+
+---
+# ── Uygulama Namespace'leri ─────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mutluet-prod
+  labels:
+    app.kubernetes.io/part-of: workload
+    environment: production
+    # Önce audit + warn; hazır olunca enforce'a geçilir
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+    # pod-security.kubernetes.io/enforce: restricted
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mutluet-staging
+  labels:
+    app.kubernetes.io/part-of: workload
+    environment: staging
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bitebimuv-prod
+  labels:
+    app.kubernetes.io/part-of: workload
+    environment: production
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+
+---
+# ── Ajan Fabrikası Namespace'i ──────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agent-factory
+  labels:
+    app.kubernetes.io/part-of: platform
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

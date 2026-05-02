@@ -1,0 +1,145 @@
+# Argo CD Uygulama Manifestleri
+# GitOps ile Mutluet ve Bitebimuv uygulamalarını cluster'a deploy eder.
+# Bu dosyalar Git'teki "tek gerçek kaynak" olarak çalışır.
+---
+# ── Argo CD AppProject: Mutluet ─────────────────────────────────────────────
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: mutluet
+  namespace: argocd
+spec:
+  description: Mutluet ve Bitebimuv uygulama projesi
+  sourceRepos:
+    - https://github.com/omerfarukkural/Mutluet
+  destinations:
+    - namespace: mutluet-prod
+      server: https://kubernetes.default.svc
+    - namespace: mutluet-staging
+      server: https://kubernetes.default.svc
+    - namespace: bitebimuv-prod
+      server: https://kubernetes.default.svc
+    - namespace: agent-factory
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: "apps"
+      kind: Deployment
+    - group: "apps"
+      kind: StatefulSet
+    - group: ""
+      kind: Service
+    - group: ""
+      kind: ConfigMap
+    - group: "networking.k8s.io"
+      kind: Ingress
+    - group: "external-secrets.io"
+      kind: ExternalSecret
+
+---
+# ── Mutluet Backend Uygulaması ───────────────────────────────────────────────
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mutluet-backend
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: mutluet
+  annotations:
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: mutluet-deploys
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: mutluet-deploys
+spec:
+  project: mutluet
+  source:
+    repoURL: https://github.com/omerfarukkural/Mutluet
+    targetRevision: main
+    path: infra/gitops/clusters/azure-prod/mutluet-backend
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mutluet-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - PrunePropagationPolicy=foreground
+    retry:
+      limit: 3
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 3m
+
+---
+# ── Mutluet Frontend Uygulaması ──────────────────────────────────────────────
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mutluet-frontend
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: mutluet
+spec:
+  project: mutluet
+  source:
+    repoURL: https://github.com/omerfarukkural/Mutluet
+    targetRevision: main
+    path: infra/gitops/clusters/azure-prod/mutluet-frontend
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mutluet-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+
+---
+# ── Ajan Fabrikası Uygulaması ────────────────────────────────────────────────
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: agent-factory
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: platform
+spec:
+  project: mutluet
+  source:
+    repoURL: https://github.com/omerfarukkural/Mutluet
+    targetRevision: main
+    path: infra/gitops/clusters/azure-prod/agent-factory
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: agent-factory
+  syncPolicy:
+    automated:
+      prune: false  # Ajan fabrikası için otomatik silme kapalı
+      selfHeal: true
+
+---
+# ── Platform Araçları (Monitoring, ESO) ─────────────────────────────────────
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-tools
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: platform
+spec:
+  project: mutluet
+  source:
+    repoURL: https://github.com/omerfarukkural/Mutluet
+    targetRevision: main
+    path: infra/gitops/clusters/azure-prod/platform-tools
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
