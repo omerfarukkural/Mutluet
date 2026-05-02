@@ -58,8 +58,12 @@ class _AdminPanelState extends State<AdminPanel> {
           ),
         );
         _instructionController.clear();
+      } else if (response.statusCode == 401) {
+        throw Exception('Yetkisiz Giriş (401): GitHub Token geçersiz veya süresi dolmuş.');
+      } else if (response.statusCode == 404) {
+        throw Exception('Bulunamadı (404): Repo ismi yanlış veya Token\'ın bu repoya erişim yetkisi yok.');
       } else {
-        throw Exception('GitHub API Hatası: ${response.body}');
+        throw Exception('GitHub API Hatası (${response.statusCode}): ${response.body}');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

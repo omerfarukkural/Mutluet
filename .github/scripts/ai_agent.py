@@ -36,18 +36,27 @@ def update_code_with_ai(prompt, target_file):
 
     response = requests.post(url, json=payload)
     
+    print(f"AI API Status: {response.status_code}")
     if response.status_code == 200:
         result = response.json()
-        new_code = result['candidates'][0]['content']['parts'][0]['text']
+        try:
+            new_code = result['candidates'][0]['content']['parts'][0]['text']
+        except (KeyError, IndexError):
+            print(f"Error: Unexpected AI response format: {json.dumps(result)}")
+            sys.exit(1)
         
         # Clean up any potential markdown backticks if AI ignored instructions
         new_code = new_code.replace("```dart", "").replace("```", "").strip()
+
+        if not new_code or len(new_code) < 10:
+            print("Error: AI returned empty or too short code.")
+            sys.exit(1)
 
         with open(target_file, "w") as f:
             f.write(new_code)
         print(f"Successfully updated {target_file}")
     else:
-        print(f"AI API Error: {response.text}")
+        print(f"AI API Error: {response.status_code} - {response.text}")
         sys.exit(1)
 
 if __name__ == "__main__":
