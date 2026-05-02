@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <base href="/">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Nefes - AI destekli İslami mindfulness ve mental sağlık uygulaması. Zikir, dua, meditasyon ve ruh hali takibi.">
+  <meta name="keywords" content="islami meditasyon, zikir, dua, mindfulness, mental sağlık, müslüman">
+  <meta property="og:title" content="Nefes - İslami Mindfulness">
+  <meta property="og:description" content="AI destekli zikir, dua ve meditasyon deneyimi">
+  <meta property="og:image" content="icons/Icon-512.png">
+  <title>Nefes - İslami Mindfulness & Mental Sağlık</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <style>
+    body {
+      margin: 0;
+      background-color: #0D1B2A;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    #loading {
+      text-align: center;
+      color: #4CAF82;
+    }
+    #loading h2 { color: white; font-size: 24px; margin-bottom: 8px; }
+    #loading p { color: #ffffff80; font-size: 14px; }
+    .loader {
+      width: 40px; height: 40px;
+      border: 3px solid #4CAF8230;
+      border-top: 3px solid #4CAF82;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+  <script>
+    // Service Worker kaydet
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('flutter-first-frame', function () {
+        navigator.serviceWorker.register('flutter_service_worker.js?v=3982005491') /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */;
+      });
+    }
+  </script>
+</head>
+<body>
+  <div id="loading">
+    <div class="loader"></div>
+    <h2>نَفَس</h2>
+    <p>Yüklüyor...</p>
+  </div>
+  <script src="main.dart.js" type="application/javascript"></script>
+</body>
+</html>

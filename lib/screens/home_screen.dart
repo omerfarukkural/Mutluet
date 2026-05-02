@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -11,12 +12,7 @@ class HomeScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.admin_panel_settings),
-            onPressed: () {
-              // go_router will handle this, but for now we just show a snackbar
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Admin paneline gitmek için /admin yolunu kullanın.')),
-              );
-            },
+            onPressed: () => context.push('/admin'),
           ),
         ],
       ),
@@ -36,6 +32,12 @@ class HomeScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {},
               child: const Text('Keşfetmeye Başla'),
+            ),
+            const SizedBox(height: 50),
+            TextButton.icon(
+              onPressed: () => context.push('/admin'),
+              icon: const Icon(Icons.settings, color: Colors.grey),
+              label: const Text('Admin Girişi (AI Kontrol)', style: TextStyle(color: Colors.grey)),
             ),
           ],
         ),
