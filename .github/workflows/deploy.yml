@@ -1,0 +1,125 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deploy hedefi"
+        required: true
+        default: "all"
+        type: choice
+        options: [all, frontend, backend]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ── Frontend → Vercel ──────────────────────────────────────────────────────
+  deploy-frontend:
+    name: Frontend → Vercel
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.target == 'all' || github.event.inputs.target == 'frontend'))
+    environment:
+      name: production
+      url: https://mutluet.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install & Build
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_SOCKET_URL: ${{ secrets.VITE_SOCKET_URL }}
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.VITE_GOOGLE_MAPS_API_KEY }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_JITSI_DOMAIN: meet.jit.si
+          VITE_ENV: production
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: "--prod"
+          working-directory: ./
+
+  # ── Backend → DigitalOcean App Platform ──────────────────────────────────
+  deploy-backend:
+    name: Backend → DigitalOcean
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.target == 'all' || github.event.inputs.target == 'backend'))
+    environment:
+      name: production
+      url: https://api.mutluet.org
+    steps:
+      - uses: actions/checkout@v4
+
+      # DigitalOcean App Platform otomatik GitHub'dan deploy eder.
+      # Bu adım, spec dosyasını güncellemek veya force-deploy için kullanılır.
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Update App Spec
+        run: |
+          doctl apps update ${{ secrets.DO_APP_ID }} --spec .do/app.yaml
+        continue-on-error: true
+
+      - name: Force Deploy (fallback)
+        if: failure()
+        run: |
+          doctl apps create-deployment ${{ secrets.DO_APP_ID }} --force-rebuild
+        continue-on-error: true
+
+  # ── Database migration (Supabase PostgreSQL) ──────────────────────────────
+  migrate-db:
+    name: Database Migration
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    environment:
+      name: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: backend/pnpm-lock.yaml
+
+      - name: Install backend deps
+        working-directory: backend
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Prisma migrations
+        working-directory: backend
+        run: pnpm exec prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

@@ -1,0 +1,124 @@
+name: mutluet
+region: ams   # Amsterdam — Türkiye'ye en yakın DigitalOcean bölgesi
+
+services:
+  - name: api
+    github:
+      repo: omerfarukkural/Mutluet
+      branch: main
+      deploy_on_push: true
+    source_dir: backend
+
+    # Node.js buildpack (Docker yerine)
+    build_command: |
+      npm install -g pnpm &&
+      pnpm install --frozen-lockfile &&
+      pnpm exec prisma generate &&
+      pnpm build
+    run_command: node dist/index.js
+
+    http_port: 3001
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-0.5gb  # $5/ay — Education kredi ile ücretsiz
+
+    health_check:
+      http_path: /health
+      initial_delay_seconds: 10
+      period_seconds: 30
+      timeout_seconds: 5
+      failure_threshold: 3
+
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_AND_BUILD_TIME
+
+      - key: PORT
+        value: "3001"
+        scope: RUN_AND_BUILD_TIME
+
+      - key: DATABASE_URL
+        value: ${DATABASE_URL}
+        type: SECRET
+        scope: RUN_AND_BUILD_TIME
+
+      - key: JWT_SECRET
+        value: ${JWT_SECRET}
+        type: SECRET
+        scope: RUN_AND_BUILD_TIME
+
+      - key: JWT_EXPIRES_IN
+        value: "7d"
+        scope: RUN_AND_BUILD_TIME
+
+      - key: FRONTEND_URL
+        value: https://mutluet.vercel.app
+        scope: RUN_AND_BUILD_TIME
+
+      - key: WORDPRESS_JWT_SECRET
+        value: ${WORDPRESS_JWT_SECRET}
+        type: SECRET
+        scope: RUN_TIME
+
+      - key: WORDPRESS_URL
+        value: https://mutluet.org
+        scope: RUN_TIME
+
+      # Email (Gmail SMTP)
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+        scope: RUN_TIME
+      - key: SMTP_PORT
+        value: "587"
+        scope: RUN_TIME
+      - key: SMTP_USER
+        value: ${SMTP_USER}
+        type: SECRET
+        scope: RUN_TIME
+      - key: SMTP_PASS
+        value: ${SMTP_PASS}
+        type: SECRET
+        scope: RUN_TIME
+      - key: FROM_EMAIL
+        value: noreply@mutluet.org
+        scope: RUN_TIME
+
+      # Stripe
+      - key: STRIPE_SECRET_KEY
+        value: ${STRIPE_SECRET_KEY}
+        type: SECRET
+        scope: RUN_TIME
+      - key: STRIPE_WEBHOOK_SECRET
+        value: ${STRIPE_WEBHOOK_SECRET}
+        type: SECRET
+        scope: RUN_TIME
+
+      # Cloudinary
+      - key: CLOUDINARY_CLOUD_NAME
+        value: ${CLOUDINARY_CLOUD_NAME}
+        type: SECRET
+        scope: RUN_TIME
+      - key: CLOUDINARY_API_KEY
+        value: ${CLOUDINARY_API_KEY}
+        type: SECRET
+        scope: RUN_TIME
+      - key: CLOUDINARY_API_SECRET
+        value: ${CLOUDINARY_API_SECRET}
+        type: SECRET
+        scope: RUN_TIME
+
+      # Sentry
+      - key: SENTRY_DSN
+        value: ${SENTRY_DSN}
+        type: SECRET
+        scope: RUN_TIME
+
+      # Google OAuth
+      - key: GOOGLE_CLIENT_ID
+        value: ${GOOGLE_CLIENT_ID}
+        type: SECRET
+        scope: RUN_TIME
+      - key: GOOGLE_CLIENT_SECRET
+        value: ${GOOGLE_CLIENT_SECRET}
+        type: SECRET
+        scope: RUN_TIME

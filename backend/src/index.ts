@@ -20,20 +20,25 @@ import { setupMonitoring, Sentry } from './config/monitoring.js';
 
 dotenv.config();
 
+// Virgülle ayrılmış FRONTEND_URL listesini parse et (örn: "https://mutluet.vercel.app,http://localhost:5173")
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',')
+  .map((u) => u.trim());
+
+const corsOptions = {
+  origin: (origin: string | undefined, cb: (e: Error | null, ok?: boolean) => void) => {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error(`CORS: ${origin} izin verilmiyor`));
+  },
+  credentials: true,
+};
+
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    credentials: true,
-  },
-});
+const io = new Server(httpServer, { cors: corsOptions });
 
 // Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true,
-}));
+app.use(cors(corsOptions));
 
 // Stripe webhook: raw body gerektirir
 app.use('/api/donations/webhook', express.raw({ type: 'application/json' }));
