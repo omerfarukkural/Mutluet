@@ -1,7 +1,5 @@
 /**
  * Secret Management - Environment Variables Based
- * 
- * Azure Key Vault kaldırıldı (maliyet optimizasyonu).
  * Tüm secretlar .env dosyasından veya platform environment variables'dan okunur.
  */
 
@@ -46,6 +44,10 @@ export async function loadSecrets(): Promise<void> {
     'WORDPRESS_JWT_SECRET',
     'SUPABASE_URL',
     'SUPABASE_SERVICE_ROLE_KEY',
+    'SMTP_USER',
+    'SMTP_PASS',
+    'CLOUDINARY_CLOUD_NAME',
+    'SENTRY_DSN',
   ];
 
   console.log('🔑 Environment secrets kontrol ediliyor...');

@@ -19,6 +19,8 @@ import { AdminDashboard } from "./components/admin-dashboard";
 import { HappinessPage } from "./components/happiness";
 import { NotFound } from "./components/not-found";
 import { ForgotPassword } from "./components/forgot-password";
+import { ResetPassword } from "./components/reset-password";
+import { AuthVerify } from "./components/auth-verify";
 
 export const router = createBrowserRouter([
   {
@@ -96,6 +98,14 @@ export const router = createBrowserRouter([
   {
     path: "/forgot-password",
     Component: ForgotPassword,
+  },
+  {
+    path: "/reset-password",
+    Component: ResetPassword,
+  },
+  {
+    path: "/auth/verify",
+    Component: AuthVerify,
   },
   {
     path: "*",

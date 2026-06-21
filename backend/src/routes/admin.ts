@@ -458,19 +458,25 @@ Türkçe yanıt ver. Teknik detayları açıkla.`
 router.post('/ai/query', authMiddleware, adminOnly, async (req: AuthRequest, res) => {
   try {
     const { query } = req.body;
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({ error: 'Sorgu metni zorunludur' });
+    }
 
-    // Güvenlik: Sadece SELECT sorgularına izin ver
-    const normalizedQuery = query.trim().toUpperCase();
-    if (!normalizedQuery.startsWith('SELECT')) {
+    // Token bazlı analiz — daha güvenli
+    const tokens = query.trim().toUpperCase().split(/\s+/);
+    if (tokens[0] !== 'SELECT') {
       return res.status(400).json({ error: 'Güvenlik: Sadece SELECT sorguları desteklenir' });
     }
 
-    // Tehlikeli kelimeleri kontrol et
-    const forbidden = ['DROP', 'DELETE', 'UPDATE', 'INSERT', 'ALTER', 'TRUNCATE', 'CREATE'];
-    for (const word of forbidden) {
-      if (normalizedQuery.includes(word)) {
-        return res.status(400).json({ error: `Güvenlik: ${word} komutu izin verilmiyor` });
-      }
+    const FORBIDDEN = new Set(['DROP', 'DELETE', 'UPDATE', 'INSERT', 'ALTER', 'TRUNCATE', 'CREATE', 'GRANT', 'REVOKE', 'EXEC', 'EXECUTE', 'COPY', 'VACUUM']);
+    const offender = tokens.find((t) => FORBIDDEN.has(t));
+    if (offender) {
+      return res.status(400).json({ error: `Güvenlik: "${offender}" komutu izin verilmiyor` });
+    }
+
+    // Yorum bloklarını temizle (SQL injection vektörü)
+    if (/\/\*|--/.test(query)) {
+      return res.status(400).json({ error: 'Güvenlik: SQL yorum sözdizimi izin verilmiyor' });
     }
 
     const result = await prisma.$queryRawUnsafe(query);

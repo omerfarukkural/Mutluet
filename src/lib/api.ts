@@ -86,6 +86,50 @@ class ApiClient {
     });
   }
 
+  async verifyMagicLink(token: string): Promise<AuthResponse> {
+    const response = await this.request<AuthResponse>(`/auth/verify?token=${token}`);
+    this.setToken(response.token);
+    return response;
+  }
+
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    return this.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token: string, password: string): Promise<{ message: string }> {
+    return this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
+    });
+  }
+
+  async uploadAvatar(file: File): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const headers: HeadersInit = {};
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+    const response = await fetch(`${API_BASE_URL.replace('/api', '')}/api/upload/avatar`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Upload failed' }));
+      throw new Error(error.error || 'Upload failed');
+    }
+    return response.json();
+  }
+
+  async createPaymentIntent(amount: number, type: string): Promise<{ clientSecret: string; paymentIntentId: string }> {
+    return this.request('/donations/create-payment-intent', {
+      method: 'POST',
+      body: JSON.stringify({ amount, type }),
+    });
+  }
+
   // User
   async getCurrentUser(): Promise<User> {
     return this.request('/users/me');

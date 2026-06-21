@@ -39,6 +39,7 @@
     "@radix-ui/react-toggle": "1.1.2",
     "@radix-ui/react-toggle-group": "1.1.2",
     "@radix-ui/react-tooltip": "1.1.8",
+    "@sentry/react": "^10.59.0",
     "@supabase/supabase-js": "^2.98.0",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
@@ -87,7 +88,12 @@
       "vite": "6.3.5"
     },
     "onlyBuiltDependencies": [],
-    "allowedBuildScripts": ["@tailwindcss/oxide", "@tailwindcss/vite", "esbuild", "sharp"]
+    "allowedBuildScripts": [
+      "@tailwindcss/oxide",
+      "@tailwindcss/vite",
+      "esbuild",
+      "sharp"
+    ]
   },
   "packageManager": "pnpm@10.25.0+sha512.5e82639027af37cf832061bcc6d639c219634488e0f2baebe785028a793de7b525ffcd3f7ff574f5e9860654e098fe852ba8ac5dd5cefe1767d23a020a92f501"
 }

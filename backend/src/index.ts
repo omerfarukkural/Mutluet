@@ -13,9 +13,10 @@ import organizationRoutes from './routes/organization.js';
 import wordpressRoutes from './routes/wordpress.js';
 import oauthRoutes from './routes/oauth.js';
 import adminRoutes from './routes/admin.js';
+import uploadRoutes from './routes/upload.js';
 import { setupSocketIO } from './services/socket.js';
 import { loadSecrets } from './config/azure-secrets.js';
-import { setupMonitoring } from './config/monitoring.js';
+import { setupMonitoring, Sentry } from './config/monitoring.js';
 
 dotenv.config();
 
@@ -24,15 +25,18 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    credentials: true
-  }
+    credentials: true,
+  },
 });
 
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true
+  credentials: true,
 }));
+
+// Stripe webhook: raw body gerektirir
+app.use('/api/donations/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
 // Routes
@@ -46,26 +50,25 @@ app.use('/api/organizations', organizationRoutes);
 app.use('/api/wordpress', wordpressRoutes);
 app.use('/api/oauth', oauthRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Sentry hata yakalama (en sona eklenmeli)
+Sentry.setupExpressErrorHandler(app);
 
 // Socket.IO setup
 setupSocketIO(io);
 
-// Start server with async initialization
 async function startServer() {
   try {
-    // Setup monitoring (Application Insights - opsiyonel)
     setupMonitoring();
-
-    // Secret kontrolü (environment variables)
     await loadSecrets();
 
     const PORT = process.env.PORT || 3001;
-
     httpServer.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📡 Socket.IO ready`);
