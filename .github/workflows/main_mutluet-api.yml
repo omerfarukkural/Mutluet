@@ -62,4 +62,3 @@ jobs:
           app-name: 'mutluet-api'
           slot-name: 'Production'
           package: .
-          
