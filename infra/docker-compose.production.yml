@@ -1,0 +1,68 @@
+# Production docker-compose - app.bitebimuv.org (34.141.16.229)
+# Kullanım: docker compose -f infra/docker-compose.production.yml up -d
+
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mutluet-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mutluet}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      POSTGRES_DB: ${POSTGRES_DB:-mutluet}
+    volumes:
+      - mutluet-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mutluet}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mutluet-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mutluet-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-mutluet}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-mutluet}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      JWT_EXPIRES_IN: 7d
+      PORT: 3001
+      FRONTEND_URL: https://app.bitebimuv.org
+      NODE_ENV: production
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    ports:
+      - "127.0.0.1:3001:3001"
+    networks:
+      - mutluet-net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: mutluet-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: https://app.bitebimuv.org/api
+    ports:
+      - "127.0.0.1:5173:80"
+    networks:
+      - mutluet-net
+
+volumes:
+  mutluet-db-data:
+
+networks:
+  mutluet-net:
+    driver: bridge

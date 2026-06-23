@@ -1,0 +1,55 @@
+name: Deploy Production (app.bitebimuv.org)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'src/**'
+      - 'lib/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/deploy-production.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Google Cloud VM
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.GCP_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sync files to server
+        run: |
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.env' \
+            --exclude='*.log' \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            ./ ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }}:~/apps/mutluet/
+
+      - name: Deploy with Docker Compose
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            ${{ secrets.GCP_USER }}@${{ secrets.GCP_HOST }} << 'ENDSSH'
+            cd ~/apps/mutluet
+            docker compose pull
+            docker compose up -d --build --remove-orphans
+            docker image prune -f
+            docker compose ps
+          ENDSSH
+
+      - name: Health check
+        run: |
+          sleep 20
+          curl -f https://app.bitebimuv.org/api/health || echo "WARNING: Health check failed"
