@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "mcpServers": {},
+  "enabledMcpjsonServers": [],
+  "disabledMcpjsonServers": [
+    "phpstorm",
+    "php-lsp",
+    "mcp-server-dev",
+    "clangd-lsp",
+    "csharp-lsp",
+    "gopls-lsp",
+    "jdtls-lsp",
+    "kotlin-lsp",
+    "lua-lsp",
+    "ruby-lsp",
+    "rust-analyzer-lsp",
+    "swift-lsp",
+    "typescript-lsp"
+  ],
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(docker:*)",
+      "Bash(docker compose:*)",
+      "Bash(npm:*)",
+      "Bash(pnpm:*)",
+      "Bash(flutter:*)",
+      "Bash(gcloud:*)",
+      "Read(**)",
+      "Edit(**)",
+      "Write(**)"
+    ],
+    "deny": []
+  },
+  "env": {
+    "N8N_DIR": "/opt/n8n",
+    "GCP_ZONE": "europe-west3-c",
+    "GCP_PROJECT": "creator-hub-ai-63948",
+    "DOMAIN": "n8n.bitebimuv.org"
+  }
+}
