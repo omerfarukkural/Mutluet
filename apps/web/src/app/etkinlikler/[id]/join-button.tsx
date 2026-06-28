@@ -20,11 +20,13 @@ export function JoinButton({ eventId, userId, currentStatus, isFull }: {
 
   async function join() {
     if (!userId) { router.push('/giris'); return }
+    const uid = userId // capture as non-optional after narrowing
     setLoading(true)
     const supabase = createClient()
-    const { error } = await supabase.from('event_registrations').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from('event_registrations').insert({
       event_id: eventId,
-      user_id: userId,
+      user_id: uid,
       status: isFull ? 'bekleme_listesi' : 'kayitli',
     })
     if (!error) {
@@ -38,7 +40,8 @@ export function JoinButton({ eventId, userId, currentStatus, isFull }: {
     if (!userId) return
     setLoading(true)
     const supabase = createClient()
-    await supabase.from('event_registrations').update({ status: 'iptal' }).eq('event_id', eventId).eq('user_id', userId)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('event_registrations').update({ status: 'iptal' }).eq('event_id', eventId).eq('user_id', userId)
     setStatus('iptal')
     router.refresh()
     setLoading(false)
