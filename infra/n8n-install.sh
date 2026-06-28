@@ -290,7 +290,7 @@ log "nginx.conf (HTTP) oluşturuldu"
 
 # ─── 11. Stack başlat (HTTP modu) ────────────────────────────
 info "Docker servisleri başlatılıyor (HTTP modu)..."
-docker compose -f "$N8N_DIR/docker-compose.yml" up -d nginx certbot postgres
+docker compose --env-file "$N8N_DIR/.env" -f "$N8N_DIR/docker-compose.yml" up -d nginx certbot postgres
 
 info "PostgreSQL hazır olana kadar bekleniyor (30s)..."
 sleep 30
@@ -302,7 +302,7 @@ warn "Her iki DNS kaydı da $SERVER_IP adresine işaret etmeli!"
 warn "Devam için Enter, iptal için Ctrl+C"
 read -r
 
-docker compose -f "$N8N_DIR/docker-compose.yml" run --rm certbot \
+docker compose --env-file "$N8N_DIR/.env" -f "$N8N_DIR/docker-compose.yml" run --rm certbot \
   certonly \
   --webroot -w /var/www/certbot \
   -d "$DOMAIN_PRIMARY" \
@@ -312,7 +312,7 @@ docker compose -f "$N8N_DIR/docker-compose.yml" run --rm certbot \
   --no-eff-email \
   --force-renewal || {
     warn "Prod cert alınamadı! Staging ile test ediliyor..."
-    docker compose -f "$N8N_DIR/docker-compose.yml" run --rm certbot \
+    docker compose --env-file "$N8N_DIR/.env" -f "$N8N_DIR/docker-compose.yml" run --rm certbot \
       certonly \
       --webroot -w /var/www/certbot \
       -d "$DOMAIN_PRIMARY" \
@@ -487,9 +487,9 @@ log "nginx.conf (HTTPS çift domain) oluşturuldu"
 
 # ─── 14. Tüm stack başlat ────────────────────────────────────
 info "Tüm servisler başlatılıyor..."
-docker compose -f "$N8N_DIR/docker-compose.yml" up -d
+docker compose --env-file "$N8N_DIR/.env" -f "$N8N_DIR/docker-compose.yml" up -d
 sleep 10
-docker compose -f "$N8N_DIR/docker-compose.yml" restart nginx
+docker compose --env-file "$N8N_DIR/.env" -f "$N8N_DIR/docker-compose.yml" restart nginx
 log "Tüm servisler çalışıyor"
 
 # ─── 15. Otomatik yedekleme cron ─────────────────────────────
@@ -511,8 +511,8 @@ Wants=network-online.target
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=${N8N_DIR}
-ExecStart=/usr/bin/docker compose up -d
-ExecStop=/usr/bin/docker compose down
+ExecStart=/usr/bin/docker compose --env-file ${N8N_DIR}/.env -f ${N8N_DIR}/docker-compose.yml up -d
+ExecStop=/usr/bin/docker compose --env-file ${N8N_DIR}/.env -f ${N8N_DIR}/docker-compose.yml down
 TimeoutStartSec=300
 
 [Install]
@@ -525,7 +525,7 @@ log "Systemd servisi aktif (reboot-safe)"
 # ─── 17. Durum kontrolü ──────────────────────────────────────
 sleep 5
 echo ""
-docker compose -f "$N8N_DIR/docker-compose.yml" ps
+docker compose --env-file "$N8N_DIR/.env" -f "$N8N_DIR/docker-compose.yml" ps
 echo ""
 
 # ─── 18. Sonuç ───────────────────────────────────────────────
