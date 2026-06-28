@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+:root {
+  --season-primary: #2E7D5C;
+  --season-accent: #5BA87A;
+  --season-bg: #F0F9F4;
+  --season-text: #1A4A30;
+  --season-gradient: linear-gradient(135deg, #2E7D5C 0%, #5BA87A 100%);
+
+  --foreground: #141A17;
+  --muted: #6B7F75;
+  --border: #D5E4DC;
+  --surface: #FFFFFF;
+  --surface-2: #F4F8F6;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--season-bg);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background 0.6s ease;
+}
+
+/* Season transitions */
+[data-season="ilkbahar"] { --season-primary: #2E7D5C; --season-accent: #5BA87A; --season-bg: #F0F9F4; }
+[data-season="yaz"]      { --season-primary: #D4820A; --season-accent: #F5B831; --season-bg: #FFFBF0; }
+[data-season="sonbahar"] { --season-primary: #8B3A1A; --season-accent: #D4622A; --season-bg: #FDF5F0; }
+[data-season="kis"]      { --season-primary: #1A3A5C; --season-accent: #2E6A9A; --season-bg: #F0F4FA; }
+
+/* Utility classes */
+.btn-primary {
+  background: var(--season-primary);
+  color: white;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: opacity 0.15s;
+  border: none;
+  cursor: pointer;
+}
+.btn-primary:hover { opacity: 0.88; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  padding: 1.25rem;
+}
+
+.badge-season {
+  background: var(--season-primary);
+  color: white;
+  padding: 0.2rem 0.65rem;
+  border-radius: 99px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

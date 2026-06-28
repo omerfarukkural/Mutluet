@@ -1,0 +1,15 @@
+@import "tailwindcss";
+:root {
+  --primary: #3A1A1A;
+  --accent: #D4622A;
+  --bg: #FDF5F0;
+  --surface: #FFFFFF;
+  --border: #E8D5C8;
+  --foreground: #1A0A06;
+  --muted: #7A5040;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--foreground); -webkit-font-smoothing: antialiased; }
+.card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.btn { padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; border: none; }
+.btn-primary { background: var(--accent); color: white; }
