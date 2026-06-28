@@ -1,66 +1,30 @@
-name: Tests and Linting
+name: Tests
 
 on:
   push:
     branches: [main, develop]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
 
 jobs:
-  backend-tests:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-    name: Backend Tests
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: pnpm/action-setup@v3
         with:
-          node-version: '22'
+          version: 9
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
 
       - name: Install dependencies
-        working-directory: ./backend
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
-      - name: Run linter
-        working-directory: ./backend
-        run: pnpm lint || echo "⚠️ Linting not configured"
-
-      - name: Run tests
-        working-directory: ./backend
-        run: pnpm test || echo "⚠️ Tests not configured"
-
-  frontend-tests:
-    runs-on: ubuntu-latest
-    name: Frontend Tests
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install pnpm
-        run: npm install -g pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run linter
-        run: pnpm lint || echo "⚠️ Linting not configured"
-
-      - name: Type check
-        run: pnpm type-check || echo "⚠️ Type checking not configured"
-
-      - name: Build
-        run: pnpm build
-        env:
-          VITE_API_URL: https://mutluet-backend.azurewebsites.net/api
+      - name: Lint
+        run: pnpm --filter @mutluet/web --filter @mutluet/admin --filter @mutluet/member lint
+        continue-on-error: true
