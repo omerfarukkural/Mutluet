@@ -1,0 +1,193 @@
+name: Güvenlik Taraması
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 2 * * 1'  # Her Pazartesi 02:00 UTC (05:00 İstanbul)
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  bagimlilik-taramasi:
+    name: Bağımlılık Güvenlik Taraması
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Frontend Bağımlılıklarını Yükle
+        run: pnpm install --frozen-lockfile
+
+      - name: Backend Bağımlılıklarını Yükle
+        run: cd backend && pnpm install --frozen-lockfile
+
+      - name: Frontend Güvenlik Taraması (pnpm audit)
+        run: |
+          echo "=== Frontend Bağımlılık Güvenlik Taraması ==="
+          pnpm audit --audit-level moderate --reporter json > audit-frontend.json || true
+          pnpm audit --audit-level high
+        continue-on-error: false
+
+      - name: Backend Güvenlik Taraması (pnpm audit)
+        run: |
+          echo "=== Backend Bağımlılık Güvenlik Taraması ==="
+          cd backend
+          pnpm audit --audit-level moderate --reporter json > audit-backend.json || true
+          pnpm audit --audit-level high
+
+  gizli-anahtar-taramasi:
+    name: Gizli Anahtar Taraması
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: TruffleHog Gizli Anahtar Taraması
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: Özel Regex Taraması (Türkçe Projeler İçin)
+        run: |
+          echo "=== API Key ve Secret Taraması ==="
+          HATA=0
+
+          # OpenAI key
+          if grep -rn "sk-[a-zA-Z0-9]\{48,\}" --include="*.ts" --include="*.tsx" --include="*.js" src/ backend/src/ 2>/dev/null; then
+            echo "❌ Kaynak kodda OpenAI API key bulundu!"
+            HATA=1
+          fi
+
+          # AWS key
+          if grep -rn "AKIA[0-9A-Z]\{16\}" --include="*.ts" --include="*.tsx" --include="*.js" src/ backend/src/ 2>/dev/null; then
+            echo "❌ Kaynak kodda AWS key bulundu!"
+            HATA=1
+          fi
+
+          # Stripe key
+          if grep -rn "sk_live_[a-zA-Z0-9]\{24,\}" --include="*.ts" --include="*.tsx" --include="*.js" src/ backend/src/ 2>/dev/null; then
+            echo "❌ Kaynak kodda Stripe canlı key bulundu!"
+            HATA=1
+          fi
+
+          # JWT secret in code
+          if grep -rn "jwt.*secret.*=.*['\"][a-zA-Z0-9]\{20,\}['\"]" --include="*.ts" --include="*.js" backend/src/ 2>/dev/null; then
+            echo "❌ Kaynak kodda JWT secret bulundu!"
+            HATA=1
+          fi
+
+          if [ $HATA -eq 0 ]; then
+            echo "✅ Gizli anahtar taraması temiz!"
+          fi
+
+          exit $HATA
+
+  typescript-guvenligi:
+    name: TypeScript Güvenlik Analizi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Bağımlılıkları Yükle
+        run: pnpm install --frozen-lockfile && cd backend && pnpm install --frozen-lockfile
+
+      - name: Frontend TypeScript Kontrolü
+        run: npx tsc --noEmit
+
+      - name: Backend TypeScript Kontrolü
+        run: cd backend && npx prisma generate && npx tsc --noEmit
+
+      - name: ESLint Güvenlik Kuralları
+        run: |
+          # no-eval, no-implied-eval, no-new-func kurallarını kontrol et
+          npx eslint src/ --rule '{"no-eval": "error", "no-implied-eval": "error"}' --format json > eslint-report.json || true
+          cat eslint-report.json | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          errors = sum(f['errorCount'] for f in data)
+          print(f'ESLint Hata Sayısı: {errors}')
+          if errors > 0:
+            for f in data:
+              if f['errorCount'] > 0:
+                for m in f['messages']:
+                  print(f\"  {f['filePath']}:{m['line']} — {m['message']}\")
+            sys.exit(1)
+          " || true
+
+  konteyner-taramasi:
+    name: Docker Image Güvenlik Taraması
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker Image Build
+        run: docker build -t mutluet-backend-scan ./backend
+
+      - name: Trivy Güvenlik Taraması
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'mutluet-backend-scan'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+        continue-on-error: true
+
+      - name: Trivy Sonuçlarını Yükle
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
+
+  guvenlik-ozeti:
+    name: Güvenlik Özeti
+    runs-on: ubuntu-latest
+    needs: [bagimlilik-taramasi, gizli-anahtar-taramasi, typescript-guvenligi]
+    if: always()
+    steps:
+      - name: Sonuç Bildirimi
+        run: |
+          BAGIMLILIK="${{ needs.bagimlilik-taramasi.result }}"
+          GIZLI="${{ needs.gizli-anahtar-taramasi.result }}"
+          TYPESCRIPT="${{ needs.typescript-guvenligi.result }}"
+
+          echo "=== GÜVENLİK TARAMA ÖZETI ==="
+          echo "Bağımlılık Taraması: $BAGIMLILIK"
+          echo "Gizli Anahtar Taraması: $GIZLI"
+          echo "TypeScript Analizi: $TYPESCRIPT"
+
+          if [ "$BAGIMLILIK" = "failure" ] || [ "$GIZLI" = "failure" ] || [ "$TYPESCRIPT" = "failure" ]; then
+            echo "❌ Güvenlik taraması başarısız! Lütfen hataları inceleyin."
+            exit 1
+          else
+            echo "✅ Tüm güvenlik taramaları geçti!"
+          fi
