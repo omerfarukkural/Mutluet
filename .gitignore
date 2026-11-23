@@ -60,3 +60,14 @@ android/app/*.keystore
 # OS
 .DS_Store
 Thumbs.db
+# wip: hassas/derleme dosyalari
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+GoogleService-Info.plist
+google-services.json
+node_modules/
+dist/
+.next/
